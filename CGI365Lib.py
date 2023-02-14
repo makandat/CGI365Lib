@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.2.1  2023-02-14
+# CGI356Lib.py v1.2.2  2023-02-14
 import os, sys, datetime, io, re
 import urllib.parse
 import pathlib
@@ -139,7 +139,9 @@ class Request:
       if isDebug():
         print("Enter form data > ")
         self.Method = 'POST'
-      s = str(sys.stdin.buffer.read())
+        s = input()
+      else:
+        s = str(sys.stdin.buffer.read())
       self.RawData += s
       #info(s)
       if s.startswith("b'-----"):

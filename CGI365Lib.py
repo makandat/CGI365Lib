@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.5.0  2023-02-21
+# CGI356Lib.py v1.5.2  2023-02-23
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -13,22 +13,22 @@ ENC = 'utf-8'
 LOG = ""
 
 # デバッグ用 判別
-def isDebug():
+def _isDebug():
   return len(sys.argv) > 1 and sys.argv[1] == "debug"
 
 # デバッグ用 QUERY_STRING 設定
 def setQueryString(qs):
-  if isDebug():
+  if _isDebug():
     os.environ["QUERY_STRING"] = qs
 
 # デバッグ用 HTTP_COOKIE 設定
 def setHttpCookie(cookie):
-  if isDebug():
+  if _isDebug():
     os.environ["HTTP_COOKIE"] = cookie
 
 # デバッグ用 REQUEST_METHOD 設定
 def setRequestMethod(method):
-  if isDebug():
+  if _isDebug():
     os.environ["REQUEST_METHOD"] = method
 
 # デバッグ用ログ出力
@@ -74,7 +74,18 @@ class Request:
 
   # POST データを解析する。
   def parseFormBody(self):
-    buff = sys.stdin.buffer.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+        buff = s.encode()
+      else:
+        with open(filePath, "rb") as f:
+          buff = f.read()
+    else:
+      buff = sys.stdin.buffer.read()
     self.RawData = buff
     name = ""
     value = ""
@@ -193,33 +204,91 @@ class Request:
 
   # クライアントから受け取った生データ文字列をJSON とみなし辞書を作成する。
   def parseJSON(self):
-    s = sys.stdin.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+      else:
+        with open(filePath, "r") as f:
+          s = f.read()
+    else:
+      # ノーマル動作
+      s = sys.stdin.read()
     self.RawData = s
     result = json.loads(s)
     return result
   
   # クライアントから受け取った生データを BLOB とみなし、self.RawData に格納する。
   def getRawData(self):
-    self.RawData = sys.stdin.buffer.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+        self.RawData = s.encode()
+      else:
+        with open(filePath, "rb") as f:
+          self.RawData = f.read()
+    else:
+      # ノーマル動作
+      self.RawData = sys.stdin.buffer.read()
     return self.RawData
   
   # クライアントから受け取った生データを BLOB とみなし、self.RawData に格納する。
   # さらに path が "" でないならファイルのパスとみなしファイル保存する。
   def saveAsBLOB(self, path):
-    self.RawData = sys.stdin.buffer.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+        self.RawData = s.encode()
+      else:
+        with open(filePath, "rb") as f:
+          self.RawData = f.read()
+    else:
+      # ノーマル動作
+      self.RawData = sys.stdin.buffer.read()
     with open(path, "wb") as f:
       f.write(self.RawData)
     return
 
   # クライアントから受け取った生データを UTF-8 文字列とみなし、self.RawData に格納する。
   def getRawString(self):
-    self.RawData = sys.stdin.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+        self.RawData = s
+      else:
+        with open(filePath, "r") as f:
+          self.RawData = f.read()
+    else:
+      # ノーマル動作
+      self.RawData = sys.stdin.read()
     return self.RawData
   
   # クライアントから受け取った生データを UTF-8 文字列とみなし、self.RawData に格納する。
   # さらに path が "" でないならファイルのパスとみなしファイル保存する。
   def saveAsRawString(self, path):
-    self.RawData = sys.stdin.read()
+    # コンソールアプリとしてデバッグするか？
+    (debug, filePath) = self._getDebug()
+    if debug == True:
+      if filePath == '':
+        print("Enter posted data > ", end='')
+        s = input()
+        self.RawData = s
+      else:
+        with open(filePath, "r") as f:
+          self.RawData = f.read()
+    else:
+      self.RawData = sys.stdin.read()
     with open(path, "w") as f:
       f.write(self.RawData)
     return
@@ -234,7 +303,7 @@ class Request:
   
   # 環境変数 QUERY_STRING から変数名をキーとする辞書を作成する。
   def _getQuery(self) -> dict:
-    if isDebug() == False:
+    if _isDebug() == False:
       if self.Method != "GET":
         return
     result = dict()
@@ -251,7 +320,7 @@ class Request:
   def _getMethod(self) -> str:
     method = "GET"
     try:
-      if isDebug() == False:
+      if _isDebug() == False:
         method = os.environ["REQUEST_METHOD"]
       else:
         if self.Method != "":
@@ -324,6 +393,18 @@ class Request:
       f.write(chunk)
     return True
 
+  # デバッグ用のファイルを得る。
+  def _getDebug(self):
+    if len(sys.argv) > 0:
+      if sys.argv[1] == 'debug':
+        return (True, '')
+      elif os.path.exists(sys.argv[1]):
+        return (True, sys.argv[1])
+      else:
+        return (False, '')
+    else:
+      return (False, '')
+
 # --------------------------------------------------------------------
 # Response class
 # --------------------------------------------------------------------
@@ -363,7 +444,7 @@ class Response:
       for h in self.Headers:
         buff += h + "\n"
     if mime == "":
-      buff += "Content-Type: text/plain\n\n" + s
+      buff += "Content-Type: text/html\n\n" + s
     else:
       buff += "Content-Type: " + mime + "\n\n" + s
     print(buff)
@@ -445,7 +526,7 @@ class Response:
       with open(path, mode="rt") as f:
         svg = f.read()
         buff = "Content-Type: image/" + img + "\n\n" + svg
-        if isDebug():
+        if _isDebug():
           pprint(buff)
         else:
           print(buff)
@@ -453,7 +534,7 @@ class Response:
       with open(path, mode="rb") as f:
         b = f.read()
         buff = b"Content-Type: image/" + img + b"\n\n" + b
-        if isDebug():
+        if _isDebug():
           pprint(buff)
         else:
           sys.stdout.buffer.write(buff)
@@ -471,7 +552,7 @@ class Response:
     with open(path, mode="rb") as f:
       b = f.read()
       buff = b"Content-Type: video/" + video + b"\n\n" + b
-      if isDebug():
+      if _isDebug():
         pprint(buff)
       else:
         sys.stdout.buffer.write(buff)
@@ -491,19 +572,22 @@ class Response:
     with open(path, mode="rb") as f:
       b = f.read()
       buff = b"Content-Type: audio/" + audio + b"\n\n" + b
-      if isDebug():
+      if _isDebug():
         pprint(buff)
       else:
         sys.stdout.buffer.write(buff)
     return
 
   # その他の形式のファイルを応答として返す。mime は ZIP="application/zip", PDF="application/pdf" など
-  def sendFile(self, path, mime):
+  def sendFile(self, path, mime, filename=""):
     bmm = bytes(mime, 'utf-8')
+    buff = ""
     with open(path, mode="rb") as f:
       b = f.read()
-      buff = b"Content-Type: " + bmm + b"\n\n" + b
-      if isDebug():
+      if filename != "":
+        buff += f"Content-Disposition: attachment; filename={filename}\n"
+      buff += b"Content-Type: " + bmm + b"\n\n" + b
+      if _isDebug():
         pprint(buff)
       else:
         sys.stdout.buffer.write(buff)

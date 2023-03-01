@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.5.2  2023-02-23
+# CGI356Lib.py v1.5.4  2023-03-01
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -126,7 +126,7 @@ class Request:
                 line = line[p+10:]
                 p = line.find(b"\"")
                 filename = line[:p].decode()
-                params["filename"] = filename
+                params[f"filename-{name}"] = filename
                 state = 2
           elif state == 1:
             # input[type="file"] でない場合 name に対する値を取得する。
@@ -145,13 +145,14 @@ class Request:
         params = dict()
       self.Form = paramlist
     else:
-      # normal form
+      # 普通のフォーム（マルチでない）
       params = urlp.parse_qs(buff.decode())
       items = dict()
       for k, v in params.items():
         items[k] = v[0]
       paramlist.append(items)
     self.Form = paramlist
+    info("self.Form = " + str(self.Form))
     return
 
   # マルチパートのブロックを行に分割する。
@@ -216,6 +217,7 @@ class Request:
     else:
       # ノーマル動作
       s = sys.stdin.read()
+    info("s=" + s)
     self.RawData = s
     result = json.loads(s)
     return result
@@ -395,7 +397,7 @@ class Request:
 
   # デバッグ用のファイルを得る。
   def _getDebug(self):
-    if len(sys.argv) > 0:
+    if len(sys.argv) > 1:
       if sys.argv[1] == 'debug':
         return (True, '')
       elif os.path.exists(sys.argv[1]):
@@ -469,16 +471,15 @@ class Response:
 
   # バイナリーデータを返す。
   def sendBinData(self, data):
-    print(b"Content-Type: application/octet-stream\n")
-    sys.stdout.buffer.write(data)
+    sys.stdout.buffer.write(b"Content-Type: application/octet-stream\n\n" + data)
     return
 
   # データを JSON に変換し応答として返す。
   def sendJSON(self, data, charset=""):
     if charset == "":
-          print("Content-Type: text/plain\n")
+      print("Content-Type: application/json\n")
     else:
-      print(f"Content-Type: text/plain; charset={charset}\n")
+      print(f"Content-Type: application/json; charset={charset}\n")
     buff = json.dumps(data)
     print(buff)
     return

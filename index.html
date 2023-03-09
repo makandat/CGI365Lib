@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width,initial-scale=1" />
+ <title>CGI365Lib</title>
+ <!-- BootstrapのCSS読み込み -->
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css" rel="stylesheet">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+ <script>hljs.initHighlightingOnLoad();</script>
+ <style>
+   code {
+     padding: 5px;
+     border: solid thin silver;
+     border-radius: 6px;
+   }
+   p {
+     margin-left:16px;
+     margin-top, margin-bottom: 1px;
+   }
+ </style>
+</head>
+
+<body>
+ <!-- ヘッダー -->
+ <header class="container">
+  <h1 class="display-2 text-primary text-center p-5">CGI365Lib</h1>
+  <div class="text-center mb-5"><a href="CGI365Lib.pdf" target="_blank">CGI365Lib 一覧 (PDF)</a>
+　サンプルページへのリンク　<a href="request.html" target="_blank">Request</a>
+　<a href="response.html" target="_blank">Response</a>
+　<a href="utility.html" target="_blank">Utility</a>
+　<a href="debug.html" target="_blank">デバッグ支援機能</a></div>
+  <div style="margin-left:25%;">
+   <!--  もくじ -->
+   <h4 class="h4 text-success">もくじ</h4>
+   <ul>
+    <li><a href="#abstruction">概要</a></li>
+    <li><a href="#basic_example">簡単な例</a></li>
+    <li><a href="#install">インストール</a></li>
+    <li><a href="#classes">クラスとモジュール関数</a>
+     <ul>
+      <li><a href="#Request">Request クラス</a></li>
+      <li><a href="#Response">Response クラス</a></li>
+      <li><a href="#Utility">Utility クラス</a></li>
+      <li><a href="#Others">その他の関数</a></li>
+     </ul>
+    </li>
+   </ul>
+  </div>
+ </header>
+
+ <!-- 本文 -->
+ <article class="container">
+   <section class="row">
+    <div class="col p-2">
+      <h2 class="text-success fs-3"><a id="abstruction"></a>概要</h2>
+      <p>CGI365Lib.py は Python3 で書かれた CGI を作るためのライブラリである。このモジュールは、3つのクラス Request, Response, Utility および モジュール関数・変数からなる。</p>
+      <p>Request クラスはクライアントからのリクエストを解析して、アプリケーションからフォームやクエリー内容を容易に取得できるようにする。</p>
+      <p>一方、Response クラスはクライアントへの応答を容易に行えるようにするためのメソッドを用意している。</p>
+      <p>Utility クラスは HTML 生成に関するスタティックメソッドを含む。</p>
+      <p>モジュール関数は主にデバッグに使うためのものである。</p>
+    </div>
+   </section>
+
+   <section class="row">
+    <div class="col p-2">
+      <!-- 簡単な例 -->
+      <h2 class="text-success fs-3"><a id="basic_example">簡単な例</a></h2>
+      <!--  Hello World! -->
+      <h3 class="text-primary fs-4">Hello World!</h3>
+      <pre><code>#!/usr/nom/env python3
+#  hello_world.cgi
+import CGI365Lib as CGI
+
+response = CGI.Response()
+response.sendSimple("Hello World! こんにちわ", "utf-8")</code></pre>
+
+      <!--  Echo -->
+      <h3 class="text-primary fs-4 mt-4">Echo</h3>
+      <p>echo.cgi はパラメータ message を受け取り、それをそのまま文字列として返す。</p>
+      <pre><code>#!C:/python3/python.exe
+#  echo.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+message = request.getParam('message')
+response.sendSimple(message, "utf-8")</code></pre>
+      </div>
+
+      <!--  Echo QUERY_STRING -->
+      <h3 class="text-primary fs-4 mt-4">Echo QUERY_STRING</h3>
+      <p>echoRaw.cgi はパラメータが保存された環境変数 QUERY_STRING の内容をそのまま文字列として返す。</p>
+      <pre><code>#!C:/python3/python.exe
+#  echoRaw.cgi QUERY_STRING をそのまま返す。
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+raw = request.QueryString
+response.sendString(raw)</code></pre>
+   </section>
+
+   <section class="row">
+    <div class="col p-2">
+      <!-- インストール -->
+      <h2 class="text-success fs-3"><a id="install"></a>インストール</h2>
+      <p>CGI と同じディレクトリに CGI365Lib.py をコピーするだけでよい。その場合、次のようにインポートして使用できる。</p>
+      <blockquote style="margin-left:50px;">import CGI365Lib as CGI</blockquote>
+    </div>
+   </section>
+
+   <section class="row">
+    <div class="col p-2">
+      <!-- クラスとモジュール関数 -->
+      <h2 class="text-success fs-3"><a id="classes"></a>クラスとモジュール関数</h2>
+      <p>一覧　<a href="CGI365Lib.pdf" target="_blank">CGI365Lib 一覧 (PDF)</a>
+　　サンプル　<a href="request.html" target="_blank">Request</a>　<a href="response.html" target="_blank">Response</a>　<a href="utility.html" target="_blank">Utility</a>
+　<a href="others.html" target="_blank">その他</a></p>
+      <br>
+      <!--  Request クラス -->
+      <h3 class="text-primary fs-4"><a id="Request"></a>Request クラス</h3>
+      <p><a href="request.html" target="_blank">Request クラスのサンプル</a></p>
+      <!--   Request クラスの概要 -->
+      <h4 class="fs-5">概要</h4>
+      <p>クライアントから送られてくるリクエストを処理して、CGI から扱いやすいように加工する。扱うことができるリクエストは次のとおりである。</p>
+      <ul>
+       <li>リクエストメソッドは "GET" と "POST" のみサポート。</li>
+       <li>リクエストパラメータは通常の形式以外に、JSON, FormData, BLOB, ArrayBuffer をサポート。</li>
+       <li>クッキーをサポート。</li>
+      </ul>
+
+      <!--   Request クラスのフィールド -->
+      <h4 class="fs-5">Request クラスのフィールド</h4>
+      <p>Request クラスには次のようなフィールドを持つ。
+self.RawData は POST メソッドでの生データで、self.parseFormBody(), self.getJSON(), getRawData() を実行すると有効な値が設定される。
+self.QueryString は GET メソッドでの生データでコンストラクタで有効なデータが設定される。</p>
+      <ul>
+        <li>self.RawData = b""                #  POST で受け取った生データ (バイト列または文字列)</li>
+        <li>self.QueryString = ""             #  GET で受け取った環境変数 QUERY_STRING (文字列)</li>
+        <li>self.Method = self._getMethod()   #  HTTP メソッド 'GET', 'POST'...</li>
+        <li>self.Address = self._getAddress() #  アドレス 辞書 キーは 'Server', 'Client', 'Host'</li>
+        <li>self.Query = self._getQuery()     #  GET のパラメータ 辞書</li>
+        <li>self.Form = dict()                #  POST のパラメータ 辞書</li>
+        <li>self.Cookie = self._getCookie()   #  クッキー 辞書</li>
+      </ul>
+      <br>
+
+      <!--   HTTP GET メソッドのリクエスト処理 -->
+      <h4 class="fs-5">HTTP GET メソッドのリクエスト処理</h4>
+      <p>GET メソッドを使ったリクエストは環境変数 "QUERY_STRING" に格納されて CGI に渡される。
+Request クラスは HTTP メソッドが "GET" の場合、自動的に QUERY_STRING の内容を解析してパラメータ名をキーとする辞書を作成する。
+そして、作成された辞書は self.Query に保存される。同時に QUERY_STRING の内容も self.QueryString に保存される。</p>
+      <p>パラメータを得るには self.Query を使ってもよいが、input[type="checkbox"] のようにキーが存在しない場合もある。
+そのような場合、self.getParam(key) を使うとキーがない場合に "" を返すので便利である。</p>
+      <p>サンプルは上の<a href="#basic_example">「簡単な例」</a>参照。</p>
+      <br>
+
+      <!--   フォームの使用 -->
+      <h4 class="fs-5">フォームの使用</h4>
+      <p>フォームの method 属性が "GET" の場合は「HTTP GET メソッドの使用」と同じである。
+フォームの method 属性が "POST" の場合は、パラメータの解析を自動的に行わないので、self.parseFormBody() メソッドを実行する必要がある。
+これは、"POST" の場合、パラメータが通常 (ノンマルチパート・フォーム) の場合以外に、マルチパート・フォーム、FormData、JSON、BLOB、ArrayBuffer の場合があるためである。
+これらについては、解析メソッドが異なるため、ケースバイケースで以下の解析メソッドを使い分けること。</p>
+      <ul>
+       <li>通常およびマルチパート・フォームおよび FormData の場合: self.parseFormBody()</li>
+       <li>JSON の場合: self.parseJSON()</li>
+       <li>BLOB, ArrayBuffer の場合: self.getRawData()
+      </ul>
+      <p>フォーム上のコントロール formText1、formCheck1 の値を読んで JSON としてそのまま送り返すサンプル</p>
+      <pre><code>#!C:/python3/python.exe
+#  postFormData.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+
+if request.Method == "POST":
+  request.parseFormBody()
+  text1 = request.getParam("formText1")
+  check1 = request.getParam("formCheck1")
+  data  = {"formText1":text1, "formCheck1":check1}
+  response.sendJSON(data, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")</code></pre>
+      <br>
+
+      <!--   マルチパートフォームの使用 -->
+      <h4 class="fs-5">マルチパートフォームの使用</h4>
+      <p>マルチパートフォーム は enctype="multipart/form-data" が付与されたフォームで、ファイルアップロードを行うときに使用される。</p>
+      <p>このようなフォームは通常のフォームとは送られてくるデータ形式が全く異なるが、
+self.parseFormData() メソッド内でデータ形式を判別して処理している。</p>
+      <p>しかし、input[type="file"] コントロール以外のコントロールではパラメータの取得は self.getParam(name) で行うことができる。
+input[type="file"] コントロールでは name 属性は self.getParam(name) で取得できるが、ファイル名とファイル内容については次のようにして取得する。</p>
+      <ul>
+        <li>ファイル名： "filename-name"</li>
+        <li>ファイル内容； "chunk-name"</li>
+      </ul>
+      <p>例えば、input[type="file"] コントロールの name 属性が "file1" だとすると、次のようにして値を取得できる。</p>
+      <ul>
+        <li>ファイル名： self.getParam("filename-file1")</li>
+        <li>ファイル内容； self.getParam("chunk-file1")</li>
+      </ul>
+      <p>次のサンプルはフォーム内のコントロール input[type="text" name="formText2"] と input[type="file" name="formFile2"] を取得し、
+アップロードされたファイルをファイル保存し、"formText2" の値と "formFile2" のファイル名を JSON で送り返すものである。</p>
+      <pre><code>#!C:/python3/python.exe
+#  postFormData2.cgi
+import CGI365Lib as CGI
+
+SAVE = "d:/temp/postFormData2.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.parseFormBody()
+  text2 = request.getParam("formText2")
+  filename = request.getParam("filename-formFile2")
+  file2 = request.getParam("chunk-formFile2")
+  with open(SAVE, "wb") as f:
+    f.write(file2)
+  data  = {"formText2":text2, "filename":filename}
+  response.sendJSON(data, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")</code></pre>
+      <br>
+
+      <!--   JSON パラメータの使用 -->
+      <h4 class="fs-5">JSON パラメータの使用</h4>
+      <p>クライアントで Fetch API を使うと JSON をパラメータとしてサーバへ送ることができる。
+この場合、データ形式がフォームと異なるため、self.parseFormBody() メソッドの代わりに self.parseJSON() メソッドを使う。</p>
+      <p>self.parseJSON() メソッドは送られてきたデータが JSON であるとして解析を行い辞書に変換し関数値として返す。</p>
+      <p>次のサンプルは JSON データを解析した辞書を再び JSON 文字列に変換してクライアント側へ送り返すものである。</p>
+      <pre><code>#!C:/python3/python.exe
+#  postJSON.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  data = request.parseJSON()
+  product = data['product']
+  amount = int(data['amount'])
+  price = int(data['price'])
+  payment = amount * price
+  result  = {"product":product, "payment":payment}
+  response.sendJSON(result, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")</code></pre>
+      <br>
+
+      <!--   FormData パラメータの使用 -->
+      <h4 class="fs-5">FormData パラメータの使用</h4>
+      <p>FormData オブジェクトはフォームをラップしたオブジェクトで JavaScript (Fetch API) でフォームを送信するとき使われる。</p>
+      <p>この場合、前述したフォームの場合と同様に self.parseFormBody() メソッドで処理を行い、パラメータを受け取ることができる。</p>
+      <p>次のサンプルは、input[type="file"] を含まない場合の例である。</p>
+      <pre><code>#!C:/python3/python.exe
+#  postFormData.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+
+if request.Method == "POST":
+  request.parseFormBody()
+  text1 = request.getParam("formText1")
+  check1 = request.getParam("formCheck1")
+  data  = {"formText1":text1, "formCheck1":check1}
+  response.sendJSON(data, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")</code></pre>
+      <p>次のサンプルは input[type="file"] を含む場合の例である。</p>
+      <pre><code>#!C:/python3/python.exe
+#  postFormData2.cgi
+import CGI365Lib as CGI
+
+SAVE = "d:/temp/postFormData2.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.parseFormBody()
+  text2 = request.getParam("formText2")
+  filename = request.getParam("filename-formFile2")
+  file2 = request.getParam("chunk-formFile2")
+  with open(SAVE, "wb") as f:
+    f.write(file2)
+  data  = {"formText2":text2, "filename":filename}
+  response.sendJSON(data, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")
+</code></pre>
+      <br>
+
+      <!--   BLOB パラメータの使用 -->
+      <h4 class="fs-5">BLOB パラメータの使用</h4>
+      <p>BLOB はファイル内容のようなオブジェクトであり、JavaScript の Blob オブジェクトとしてサポートされている。
+BLOB は生データなので解析を行う必要がない。BLOB を得るには self.getRawData() メソッドを使う。</p>
+      <p>次の例はクライアント側からアップロードされたテキストファイルをサーバ側にファイル保存するものである。
+クライアント側が Windows の場合は、行末が CR+LF なので LF のみにしている。</p>
+      <pre><code>#!C:/python3/python.exe
+#  uploadTextFile.cgi
+import CGI365Lib as CGI
+import os
+
+SAVE = "D:/temp/uploadTextFile.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  data = request.getRawData()
+  if os.name == "nt":
+    data = data.replace(b"\r\n", b"\n")
+  with open(SAVE, "w") as f:
+    text = data.decode()
+    f.write(text)
+  response.sendSimple(SAVE + " にファイル保存しました。", "utf-8")
+else:
+  response.sendSimple("Bad REQUEST_METHOD")
+</pre></code>
+      <p>次の例はアップロードされたバイナリーファイルをサーバ側にファイル保存するものである。</p>
+      <pre><code>#!C:/python3/python.exe
+#  uploadBinaryFile.cgi
+import CGI365Lib as CGI
+
+SAVE = "D:/temp/uploadBinaryFile.bin"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  data = request.getRawData()
+  with open(SAVE, "wb") as f:
+    f.write(data)
+  response.sendSimple(SAVE + " にファイル保存しました。", "utf-8")
+else:
+  response.sendSimple("Bad REQUEST_METHOD")
+</code></pre>
+      <p>この例では self.getRawData() で生データを取得して f.write() でファイル保存しているが、self.saveFile(name, savedir, binary=False) というメソッドを使うともっと簡単にファイル保存できる。</p>
+      <br>
+
+      <!--   クッキーの使用 -->
+      <h4 class="fs-5">クッキーの使用</h4>
+      <p>クッキーは self.Cookie というメンバー変数に保存される。これはクッキー名をキーとする辞書である。</p>
+      <p>次の例は、Response クラスのメソッド self.header(h) でクッキーをクライアントへ送り、2 回目にこのCGIを起動したとき、1 回目に送ったクッキーを取得して表示する。</p>
+      <pre><code>#!c:/python3/python.exe
+# testCookie.cgi
+import CGI365Lib as CGI
+from pprint import pprint
+
+request = CGI.Request()
+response = CGI.Response()
+
+response.header({"Set-Cookie":"Cooki1=1024", "Content-Type":"text/plain"})
+pprint(request.Cookie)</code></pre>
+      <br>
+
+      <!--   ファイル保存メソッド -->
+      <h4 class="fs-5">ファイル保存メソッド</h4>
+      <p>アップロードされたファイル内容をサーバ側でファイル保存するためのメソッドが用意されている。
+これらのメソッドは POST メソッドで送信されたデータ (self.RawData) を使うので、self.getRawData() や self.parseFormBody() メソッドの後に使用すること。</p>
+      <ul>
+        <li>saveRawData(self, savePath): self.RawData の内容を savePath で指定したファイルにバイナリー保存する。デバッグ用ファイルを作るときなどに使用する。</li>
+        <li>saveAsRawString(self, path): self.RawData の内容を savePath で指定したファイルにバイト列として保存する。</li>
+        <li>saveAsBLOB(self, path): self.RawData の内容を savePath で指定したファイルに BLOB として保存する。</li>
+        <li>saveFile(self, name, savedir, binary=False): saveRawData(self, savePath) とほぼ同じであるが、文字列保存の指定ができる。アップロードファイルをサーバ側に保存するのに使用する。</li>
+      </ul>
+      <br>
+
+      <!-- Response クラス -->
+      <h3 class="text-primary fs-4"><a id="Response"></a>Response クラス</h3>
+      <p><a href="response.html" target="_blank">Response クラスのサンプル</a></p>
+      <!--  Response クラスの概要 -->
+      <h4 class="fs-5">Response クラスの概要</h4>
+      <p>Response クラスはクライアント側へ HTTP で応答を返すためのメソッドを集めたクラスであり、次のようなメソッドを持つ。</p>
+      <ul>
+       <li>文字列の出力</li>
+       <li>ファイルの出力</li>
+       <li>クッキーの出力</li>
+       <li>ヘッダーの出力</li>
+      </ul>
+      <br>
+      <!--  Response クラスのフィールド -->
+      <h4  class="fs-5">Response クラスのフィールド</h4>
+      <p>Response クラスには以下のフィールドがある。</p>
+      <ul>
+       <li>self.Cookie = list(): クッキーのリストで "key=value" 形式の文字列が入る。</li>
+       <li>self.Headers = list(): そのまま出力可能なヘッダー文字列のリスト</li>
+      </ul>
+      <br>
+
+      <!--  文字列の出力 -->
+      <h4 class="fs-5">文字列の出力</h4>
+      <p>文字列を出力するメソッドは以下のとおりである。self.sendString(s:str, mime="", cookie=True, headers=True, embed=None) メソッドでは
+たんに文字列を出力するだけでなく、クッキーを含むヘッダーも出力される。また、MIME タイプ (文字コードを設定可能) を指定できる。
+さらに、文字列内に "{{ key }}" というパターンがあれば embed という辞書に含まれる key の値にそのパターンが置換される。</p>
+      <ul>
+        <li>self.sendSimple(s:str, charset=""): 文字列 s を出力する。charset="" の場合は文字コードは環境に依存する。</li>
+        <li>self.sendString(s:str, mime="", cookie=True, headers=True, embed=None): 文字列を出力する前にクッキーとその他のヘッダーを出力する。mime が空文字でないと "Content-Type: " に付加して出力する。embed は辞書で s に "{{ key }}" という文字列があると key に対応する value に置き換える。</li>
+        <li>self.sendJSON(data, charset=""): 辞書型 data を JSON 文字列に変換して出力する。charset="" の場合は文字コードは環境に依存する。</li>
+        <li>self.self.sendPPrint(obj, charset=""): オブジェクト obj を見やすい文字列にして出力する。主にデバッグ用。</li>
+      </ul>
+      <br>
+      <!--  ファイルの出力 -->
+      <h4 class="fs-5">ファイルの出力</h4>
+       <p>ファイルを出力するメソッドは以下のとおりである。</p>
+       <p>self.sendHtml(path, charset="", cookie=True, embed=None) は HTML を出力するだけでなく、クッキーの出力も同時に行う。
+さらに、HTML ファイル内に "{{ key }}" というパターンがある場合、embed に辞書が設定されていれば、その辞書のキーに対する値でそのパターンを置換する。</p>
+       <p>self.sendFile(path, mime, filename) は主にファイルダウンロードに使用される。path はダウンロードするファイルのパスであるが、filename はアタッチされるファイル名で、ファイル保存ダイアログに表示される。</p>
+       <ul>
+         <li>self.sendText(self, path, charset=""): path で指定したテキストファイルを出力する。</li>
+         <li>self.sendHtml(path, charset="", cookie=True, embed=None): path で指定される HTML ファイルを出力する。cookie=True の場合はクッキーも同時出力し、embed=None でない場合は、辞書とみなし "{{ key }}" という文字列があると key に対応する value に置き換える。</li>
+         <li>self.sendImage(path): path で指定した画像ファイルを出力する。画像ファイルには SVG も含む。</li>
+         <li>self,sendVideo(path): path で指定した動画ファイルを出力する。</li>
+         <li>self.sendFile(path, mime, filename="")</li>
+       </ul>
+       <br>
+      <!--  クッキーの出力 -->
+      <h4 class="fs-5">クッキーの出力</h4>
+      <p>クッキーは HTML の送信時にいっしょに送信される。つまり、sendString(s:str, mime="", cookie=True, headers=True, embed=None) メソッドでの cookie=True の場合や
+self.sendHtml(path, charset="", cookie=True, embed=None) での cookie=True の場合である。</p>
+      <p>クッキーを出力するには self.Cookie というリストに クッキーの内容をキー：値で設定しておく必要がある。
+これは、self.setCookie(cookie) というメソッドで行う。このメソッドのパラメータ cookie はキーがクッキー名、値がクッキー文字列であるような辞書である。</p>
+      <p>self.makeCookie() メソッドは主に内部で使用されるメソッドで self.Cookie の内容を HTML を出力する際に Set-Cookie 文に変換してヘッダーに追加する。</p>
+      <br>
+
+      <!--  ヘッダーの出力 -->
+      <h4 class="fs-5">ヘッダーの出力</h4>
+      <p>self.Headers というリスト型メンバー変数に完全なヘッダー文を追加しておくと、self.sendString() メソッドを実行したとき、文字列本体が出力される前にそのヘッダー文が送信される。</p>
+      <p>self.header(headers) メソッドを使うと、直接、ヘッダーを出力する。パラメータ headers は完全なヘッダー文のリストである。
+さらに、リダイレクトに関しては特別なメソッド self.redirect(url) が用意されていて、パラメータ url で指定される URL へリダイレクトする。</p>
+      <br>
+
+      <!--  Utility クラス -->
+      <h3 class="text-primary fs-4"><a id="Utility"></a>Utility クラス</h3>
+      <p><a href="utility.html" target="_blank">Utility クラスのサンプル</a></p>
+      <p>Utility クラスには次のメソッドが含まれる。これらはすべてスタティックメソッドなので Utility クラスをインスタンス化する必要はない。</p>
+      <ul>
+       <li>htmlTable(data, header, table="", tr="", th="", td=""): HTML テーブルを作成し関数値として返す。data はテーブルの行データ、header はテーブルの先頭行データ、その他は各要素のクラス指定である。</li>
+       <li>htmlList(data, list="ul", ul="", li=""): HTML リストを作成し関数値として返す。data はリストデータ、list はリストタイプ、その他は要素のクラス指定である。</li>
+       <li>svg(shape, size=32, borderWidth=1, borderColor="black", bgColor="white): SVG (ただし、円と正方形のみ) を作成して文字列として返す。
+shape は "circle" と "square" のみが有効。</li>
+       <li>startProcess(cmd, *arg): 子プロセスを起動する。cmd はコマンド、*arg はコマンドのパラメータリストで可変長である。</li>
+      </ul>
+      <br>
+      <!--  その他 -->
+      <h3 class="text-primary fs-4"><a id="Others"></a>その他</h3>
+      <!--  デバッグ -->
+      <h4>デバッグ</h4>
+      <p>CGI に "debug" というパラメータを付けて起動すると、コンソールアプリとして動作する。その場合、プロンプトが表示されて GET メソッドなら環境変数 QUERY_STRING に設定する値を入力できる。
+ POST メソッドの場合もキーボードからパラメータを入力できる。</p>
+      <p>"debug" でなくファイルのパス名を指定すると、そのファイルから読み込んだデータが POST されたパラメータとして使用される。</p>
+      <p>このようなファイル内容は手動でも作れるが、長い場合は self.RawData をそのまま保存する簡単な CGI を作ってファイルを作成するとよい。</p>
+      <h5>self.RawData をファイル保存する CGI のサンプル</h5>
+      <pre><code>#!C:/python3/python.exe
+#  saveRawData.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp/saveRawData.dat"
+if os.name == "nt":
+  savePath = "d:/temp/saveRawData.dat"
+
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.getRawData()
+  request.saveRawData(savePath)
+  response.sendSimple(savePath + " に保存しました。", "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+      <br>
+      <!--  ロギング -->
+      <h4>ロギング</h4>
+      <p>CGI365Lib.LOG という定数に有効なファイルパスを設定すると、そのファイルに CGI365Lib.info(message) 関数で文字列を出力できる。
+CGI365Lib.LOG はデフォルトで "" になっており、その場合、CGI365Lib.info(message) は機能しない。</p>
+    <p><a href="debug.html" target="_blank">デバッグ支援機能のページ</a></p>
+    </div>
+   </section>
+ </article>
+
+ <!-- フッター -->
+ <footer class="container">
+  <p class="text-center mt-4"><a href="#top">TOP</a></p>
+  <p>&nbsp;</p>
+ </footer>
+ <!-- BootstrapのJS読み込み -->
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

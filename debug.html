@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width,initial-scale=1" />
+ <title>debug</title>
+ <!-- BootstrapのCSS読み込み -->
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+ <!-- highlight.js -->
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css" rel="stylesheet">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+ <script>hljs.initHighlightingOnLoad();</script>
+ <style>
+   p {
+     margin-top:2px;
+     margin-bottom:2px;
+   }
+   code {
+     border: solid thin silver;
+     border-radius: 8px;
+     padding: 5px;
+   }
+   pre {
+     font-size: 10pt;
+   }
+   form {
+     margin: 6px;
+     padding: 4px;
+     border: solid thin silver;
+     border-radius: 6px;
+     background-color: whitesmoke;
+   }
+   .result {
+     color:fuchsia;
+     padding:4px;
+     font-size;12pt;
+   }
+   .form-row {
+     margin-left:2%;
+     margin-top:8px;
+   }
+   .message {
+     padding:4px;
+     color:magenta;
+   }
+   .console {
+     padding:6px;
+     margin-left:5%;
+   }
+ </style>
+</head>
+
+<body>
+ <!-- ヘッダー -->
+ <header class="container">
+  <h1 class="header-1 text-primary text-center p-5">デバッグ支援機能</h1>
+  <!--  もくじ -->
+  <h4 style="margin-left:25%;">もくじ</h4>
+  <ul style="margin-left:25%;margin-top:16px;">
+   <li><a href="#abstruction">概要</a></li>
+   <li><a href="#logging">ロギング</a></li>
+   <li><a href="#console">コンソール画面での実行</a></li>
+   <li><a href="#curl">curl コマンド</a></li>
+  </ul>
+ </header>
+
+ <!-- 本文 -->
+ <article class="container">
+   <!-- 概要 -->
+   <section class="row">
+    <h2 class="fs-4 text-success"><a id="abstruction"></a>概要</h2>
+    <p>CGI はウェブサーバから子プロセスとして起動される。そのため、デバッガで直接デバッグすることはできない。CGI365Lib.py では CGI をデバッガを使ってデバッグのためにコンソールアプリとして実行できるようにしている。<p>
+    <p>CGI にコマンドパラメータ "debug" あるいは "debug_get" を付けて実行すると、キーボードから環境変数 QUERY_STRING の代わりにキー入力したデータを使うことができる (GET メソッドの場合)。</p>
+    <p>CGI にコマンドパラメータ "debug_post" を付けて実行すると、キー入力したデータを生データ (request.RawData) として使うことができる (POST メソッドの場合)。</p>
+    <p>また、コマンドパラメータにファイルのパス名を指定すると、そのファイルを読み込んで生データ request.RawData にセットする。これは、 GET と POST メソッドで使用できる。</p>
+    <p>下記のようなデバッグ用の関数もある。</p>
+    <ul class="mt-3 ms-5">
+      <li>_isDebug():<br> コンソールアプリとして起動したときのコマンドパラメータ debug または debug_get, debug_post がある場合、True を返す。</li>
+      <li>setQueryString(qs):<br> 環境変数 QUERY_STRING に qs を設定する。パラメータ qs は、"key1=value1&key2=value2" などのような文字列である。この関数はコマンドパラメータに "debug" などを与えた時のみ実行され、Request クラスをインスタンス化する前に実行する必要がある。</li>
+      <li>setRequestMethod(method):<br> 環境変数 REQUEST_METHOD に method を設定する。パラメータ method は "GET" や "POST" である。この関数はコマンドパラメータに "debug" などを与えた時のみ実行され、Request クラスをインスタンス化する前に実行する必要がある。</li>
+      <li>setHttpCookie(cookie):<br> 環境変数 HTTP_COOKIE に cookie を設定する。パラメータ cookie は、"key1=value1; key2=value2" などのような文字列である。この関数はコマンドパラメータに "debug" などを与えた時のみ実行され、Request クラスをインスタンス化する前に実行する必要がある。</li>
+      <li>Request._getDebug():<br>タプル (dbg, filePath) を返す。dbg はデバッグモードの時 True、filePath はデバッグ用データファイルがある場合、そのパス名がセットされる。</li>
+    </ul>
+    <h5>デバッグ用関数の使用例</h5>
+    <pre><code>#!c:/python3/python.exe
+#  debugFunc.cgi
+import CGI365Lib as CGI
+import os
+# 以下の3つの関数は CGI として実行した場合は何もしない。
+CGI.setRequestMethod("GET")
+CGI.setQueryString("message=Hello+World!")
+CGI.setHttpCookie("cookie1=Hello; cookie2=World!")
+
+request = CGI.Request()
+response = CGI.Response()
+
+s = request.getParam("message") + ", "
+s += request.getCookie("cookie1") + ", "
+s += request.getCookie("cookie2")
+response.sendSimple(s, "utf-8")
+</code></pre>
+   </section>
+
+   <!-- ロギング -->
+   <section class="row mt-4">
+    <h2 class="fs-4 text-success"><a id="logging"></a>ロギング</h2>
+    <p>CGI.LOG という変数にログファイルのパスを設定しておくと CGI.info(msg) 関数の msg 内容がそのファイルに追加される。CGI.LOG はデフォルトで "" になっており、"" だと CGI.info(msg) は何もしない。</p>
+    <pre><code>#! c:/python/python.exe
+import CGI265Lib as CGI
+CGI.LOG = "d:/temp/CGI365Lib.log"
+CGI.info("Start CGI")
+......</code></pre>
+   </section>
+
+   <!-- コンソール画面での実行 -->
+   <section class="row">
+    <h2 class="fs-4 text-success mt-4"><a id="console"></a>コンソール画面での実行</h2>
+    <p>hello_world.cgi のようなパラメータがない CGI はそのままコンソール画面で実行できる。パラメータが必要な CGI の場合、リクエストメソッドの種類にかかわらず標準入力からパラメータを与えることができる。</p>
+    <p>CGI365Lib.py を使った CGI はコンソール画面で実行できるような仕組みを持つ。例えば、次のようにコマンドパラメータ "debug" を使ってコンソール画面で起動すると、プロンプトが表示されてキーボードから CGI パラメータを与えることができる。</p>
+    <p>その際、パラメータは key1=value1&key2=value2&key3=value3 ... の形式で与える。</p>
+    <h5 class="mt-4">コンソールアプリとして実行する例 (キーボードからパラメータを入力する場合)</h5>
+    <pre class="console">PS C:\> python echo.cgi debug_get
+Enter QUERY_STRING >
+message=こんにちは
+Content-Type: text/plain; charset=utf-8
+
+こんにちは</pre>
+
+    <h5 class="mt-4">コンソールアプリとして実行する例 (ファイルからパラメータを入力する場合)</h5>
+    <p>コマンドの第二パラメータにファイルを指定しておくと、キーボード入力ではなくファイルから CGI のパラメータを読み込む。</p>
+    <pre class="console">PS C:\> python echo.cgi debug_get message.txt
+Content-Type: text/plain; charset=utf-8
+
+Hello World!</pre>
+   <p>コンソールアプリとして実行する場合は、VSCODE などのデバッガを使って CGI をデバッグできる。</p>
+   </section>
+
+   <!-- curl コマンド -->
+   <section class="row">
+    <h2 class="fs-4 text-success mt-4"><a id="curl"></a>curl コマンド</h2>
+    <p>CGI を起動するのにいちいち HTML ページを作るのは面倒だし、ブラウザだと HTTP ヘッダ情報を直接見ることができない。そんな場合は、curl コマンドを使うと便利である。</p>
+    <p>次の例は message をそのまま送り返す CGI (echo.cgi) にメッセージを送り結果を表示するものである。メッセージを送る場合、空白が含まれているとエラーになるので、+ または %20 で置き換える。</p>
+    <pre class="console">PS C:\&gt; <b>curl http://localhost/cgi-bin/CGI365Lib/Proj/echo.cgi?message=Hello+World!</b>
+Hello World!</pre>
+   <p>HTTP ヘッダも含めた応答を表示するには --verbose オプションを指定する。</p>
+   <pre class="console">PS C:\> <b>curl -verbose http://localhost/cgi-bin/CGI365Lib/Proj/echo.cgi?message=Hello%20World!</b>
+*   Trying 127.0.0.1:80...
+* Connected to localhost (127.0.0.1) port 80 (#0)
+&gt; GET /cgi-bin/CGI365Lib/Proj/echo.cgi?message=Hello%20World! HTTP/1.1
+&gt; Host: localhost
+&gt; User-Agent: curl/7.83.1
+&gt; Accept: */*
+&gt; Referer: rbose
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200 OK
+&lt; Date: Thu, 09 Mar 2023 02:47:02 GMT
+&lt; Server: Apache/2.4.53 (Win64) OpenSSL/1.1.1o
+&lt; Upgrade: h2,h2c
+&lt; Connection: Upgrade
+&lt; Transfer-Encoding: chunked
+&lt; Content-Type: text/plain; charset=utf-8
+&lt;
+Hello World!
+* Connection #0 to host localhost left intact</pre>
+    <p>POST メソッドを使って CGI を起動することもできる。その場合はコマンド引数 "-X POST" を指定する。<br>
+POST メソッドでパラメータを指定するには -d オプションまたは --data-urlencode を指定する。そして、-d は日本語を含まない場合のみ使用できる。</p>
+   <p class="mt-2">-X POST -d '...' の使用例</p>
+   <pre class="console">PS C:\> curl -X POST -d 'message=Hello+World!' http://localhost/cgi-bin/CGI365Lib/Proj/echoForm.cgi
+[{'message': 'Hello World!'}]</pre>
+   </section>
+ </article>
+
+ <!-- フッター -->
+ <footer class="container">
+  <p class="text-center mt-4"><a href="#top">TOP</a></p>
+  <p>&nbsp;</p>
+ </footer>
+ <!-- BootstrapのJS読み込み -->
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

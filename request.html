@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width,initial-scale=1" />
+ <title>Request</title>
+ <!-- BootstrapのCSS読み込み -->
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+ <!-- highlight.js -->
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css" rel="stylesheet">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+ <script>hljs.initHighlightingOnLoad();</script>
+ <style>
+   code {
+     border: solid thin silver;
+     border-radius: 8px;
+     padding: 5px;
+   }
+   pre {
+     font-size: 10pt;
+   }
+   form {
+     margin: 6px;
+     padding: 4px;
+     border: solid thin silver;
+     border-radius: 6px;
+     background-color: whitesmoke;
+   }
+   .result {
+     color:fuchsia;
+     padding:4px;
+     font-size;12pt;
+   }
+   .form-row {
+     margin-left:2%;
+     margin-top:8px;
+   }
+   .message {
+     padding:4px;
+     color:magenta;
+   }
+ </style>
+ <script src="/js/JS365Lib.js"></script>
+ <!-- JavaScript イベントハンドラ -->
+ <script>
+  // POST フォームを開く。
+  function requestPostForm() {
+     window.open("/cgi-bin/CGI365Lib/Proj/requestPostForm.cgi", "requestPostForm");
+  }
+
+  // JSON でリクエスト
+  function requestJSON(method) {
+    if (method == "GET") {
+      fetchJSON("/cgi-bin/CGI365Lib/Proj/fetchJSON.cgi", {"product":"みかん", "amount":12, "price":85}, "GET", (data) => {
+        setValue("fetchJSON", JSON.stringify(data));
+      });
+    }
+    else if (method == "POST") {
+      fetchJSON("/cgi-bin/CGI365Lib/Proj/fetchJSON.cgi", {"product":"りんご", "amount":10, "price":120}, "POST", (data) => {
+        setValue("fetchJSON", JSON.stringify(data));
+      });
+    }
+    else {
+      alert("メソッドが不正です。");
+    }
+  }
+
+  // フォームをラップした FormData を送信する。
+  function fetchFormData1(formElement) {
+    const formData = new FormData(formElement);
+    postFormData("/cgi-bin/CGI365Lib/Proj/postFormData.cgi", formData, (data) => {
+       let check1 = "off";
+       if (data.formCheck1) {
+         check1 = "on";
+       }
+       setValue("resultFormData2", "受け取ったデータ：" + data.formText1 + ", " + check1);
+    });
+  }
+
+  // FormData を新規作成して送信する。
+  function fetchFormData2() {
+    const formData = new FormData();
+    formData.append("formText1", "FormData 新規作成");
+    formData.append("formCheck1", "append(formCheck1)");
+    postFormData("/cgi-bin/CGI365Lib/Proj/postFormData.cgi", formData, (data) => {
+      setValue("resultFormData2", "受け取ったデータ：" + data.formText1 + ", " + data.formCheck1);
+    });
+  }
+
+  // テキストファイルを BLOB としてアップロードする。
+  function uploadTextFile() {
+    uploadTextFile("/cgi-bin/CGI365Lib/Proj/uploadTextFile.cgi", "uploadFile1", (msg) => {
+      setValue("resultBLOB", msg);
+    });
+  }
+
+  // バイナリーファイルを BLOB としてアップロードする。
+  function uploadBinaryFile() {
+    uploadTextFile("/cgi-bin/CGI365Lib/Proj/uploadBinaryFile.cgi", "uploadFile2", (msg) => {
+      setValue("resultBLOB2", msg);
+    });
+  }
+
+
+  // 生データをサーバへ送信して文字列としてファイル保存する。
+  function saveAsRawString() {
+    const data = new Uint8Array(6);
+    data[0] = 0x41;
+    data[1] = 0x61;
+    data[2] = 0x42;
+    data[3] = 0x62;
+    data[4] = 0x43;
+    data[5] = 0x63;
+    const blob = new Blob(data);
+    uploadBLOB("/cgi-bin/CGI365Lib/Proj/saveAsRawString.cgi", blob, (text) => {
+      setValue("resultSaveAsRawString", text);
+    });
+  }
+
+  // 生データをサーバへ送信して文字列としてファイル保存する。
+  function saveAsBLOB() {
+    const data = new Uint8Array(6);
+    data[0] = 0x41;
+    data[1] = 0x61;
+    data[2] = 0x42;
+    data[3] = 0x62;
+    data[4] = 0x43;
+    data[5] = 0x63;
+    const blob = new Blob(data);
+    uploadBLOB("/cgi-bin/CGI365Lib/Proj/saveAsBLOB.cgi", blob, (text) => {
+      setValue("resultSaveAsBLOB", text);
+    });
+  }
+
+  // input[type="file"] でファイルをサーバへ送信してファイル保存する。
+  function saveFile() {
+    postForm("/cgi-bin/CGI365Lib/Proj/saveFile.cgi", formSaveFile, (data) => {
+      setValue("resultSaveFile", JSON.stringify(data));
+    });
+  }
+
+  // ウィンドウがロード完了したとき
+  window.onload = () => {
+    // Request クラスのフィールドを得る。
+    getJSON("/cgi-bin/CGI365Lib/Proj/requestFields.cgi/All?x=123", (data) => {
+       let html = "";
+       Object.keys(data).forEach((k) => {
+         html += `<li>${k} = ${data[k]}</li>`;
+       });
+       insertHTML("RequestFields", html, 1)
+    });
+
+    // get1button がクリックされたとき
+    clickEvent("get1button", (event) => {
+      const param = "?a=10&b=ABCD";
+      getJSON("/cgi-bin/CGI365Lib/Proj/getJSON.cgi" + param, (data) => {
+        setValue("get1result", JSON.stringify(data));
+      });
+    });
+  }
+ </script>
+</head>
+
+<body>
+ <!-- ヘッダー -->
+ <header class="container">
+  <h1 class="header-1 text-primary text-center p-5">Request クラス</h1>
+  <!--  もくじ -->
+  <h5 class="h5" style="margin-left:25%;">もくじ</h5>
+  <ul style="margin-left:25%;">
+   <li><a href="#fields">Request クラスのフィールド</a></li>
+   <li><a href="#get_request">GET メソッドでのリクエスト</a></li>
+   <li><a href="#post_request">POST メソッドのリクエスト</a></li>
+   <li><a href="#json_request">JSON でのリクエスト</a></li>
+   <li><a href="#formdata_request">FormData でのリクエスト</a></li>
+   <li><a href="#blob_request">BLOB でのリクエスト</a></li>
+   <li><a href="#savefile">クライアントから送られてきたデータをファイル保存</a></li>
+   <li><a href="#cookie">クッキーの取得</a></li>
+  </ul>
+ </header>
+
+ <!-- 本文 -->
+ <article class="container">
+   <hr>
+   <!-- Request クラスのフィールド -->
+   <section class="row">
+    <h4 class="fs-4 text-success"><a id="fields"></a>Request クラスのフィールド</h4>
+    <div class="col p-2">
+      <p>リクエスト URL　/cgi-bin/CGI365Lib/Proj/requestFields.cgi/All?x=123</p>
+      <ul id="RequestFields">
+      </ul>
+    </div>
+   </section>
+   <hr>
+
+   <!-- GET メソッドでのリクエスト -->
+   <section class="row">
+    <div class="col p-2">
+      <h4 class="fs-4 text-success"><a id="get_request"></a>GET メソッドでのリクエスト</h4>
+      <p>"get1 button" ボタンをクリックすると、"/cgi-bin/CGI365Lib/Proj/getJSON.cgi?a=10&b=ABCD" をフェッチする。</p>
+      <p><button id="get1button" class="btn btn-primary">get1 button</button>
+      <br>
+      <form method="GET" action="/cgi-bin/CGI365Lib/Proj/getJSON.cgi">
+        <p>"送信する" ボタンをクリックすると、"/cgi-bin/CGI365Lib/Proj/getJSON.cgi" にフォームを submit する。なお、このフォームのメソッドは method="GET" である。</p>
+        <div class="form-row">
+          <label class="form-label">a
+           <input type="text" name="a" class="form-control">
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-label">b
+          <input type="text" name="b" class="form-control">
+          </label>
+        </div>
+        <div class="form-row">
+          <input type="submit" class="btn btn-primary" value="送信する">
+        </div>
+      </form>
+    </div>
+    <div class="col p-2">
+      <p>ここに getJSON.cgi から "get1 button" をクリックしたとき送り返されてきたデータ (JSON) が表示される。なお、フォームを送信したときは別ページが開く。</p>
+      <p id="get1result" class="result"></p>
+    </div>
+    <h5>CGI のソース</p>
+    <pre><code>#!C:/python3/python.exe
+#  getJSON.cgi
+import CGI365Lib as CGI
+
+CGI.info("getJSON.cgi")
+request = CGI.Request()
+response = CGI.Response()
+a = request.getParam("a")
+b = request.getParam("b")
+response.sendJSON({"a":a, "b":b}, "utf-8")</code></pre>
+    <h5>"get1 button" のイベントハンドラ (JS365Lib.js を使用)</h5>
+    <pre><code>clickEvent("get1button", (event) => {
+  const param = "?a=10&b=ABCD";
+  getJSON("/cgi-bin/CGI365Lib/Proj/getJSON.cgi" + param, (data) => {
+    setValue("get1result", JSON.stringify(data));
+  });
+});</pre></code>
+   <h5>フォームのソース</h5>
+   <pre><code>&lt;form method="GET" action="/cgi-bin/CGI365Lib/Proj/getJSON.cgi">
+  &lt;p>"送信する" ボタンをクリックすると、"/cgi-bin/CGI365Lib/Proj/getJSON.cgi" にフォームを submit する。なお、このフォームのメソッドは method="GET" である。&lt;/p>
+  &lt;div class="form-row">
+    &lt;label class="form-label">a
+      &lt;input type="text" name="a" class="form-control">
+    &lt;/label>
+  &lt;/div>
+  &lt;div class="form-row">
+    &lt;label class="form-label">b
+      &lt;input type="text" name="b" class="form-control">
+    &lt;/label>
+  &lt;/div>
+  &lt;div class="form-row">
+     &lt;input type="submit" class="btn btn-primary" value="送信する">
+  &lt;/div>
+&lt;/form></code></pre>
+   </section>
+   <hr>
+
+   <!-- POST メソッドのリクエスト -->
+   <section class="row">
+     <h4 class="fs-4 text-success"><a id="post_request"></a>POST メソッドのリクエスト</h4>
+     <p><a href="javascript:requestPostForm()">POST メソッドのフォームを開く</a></p>
+     <h5>ソース requestPostForm.cgi</h5>
+     <pre><code>#! c:/python3/python.exe
+# requestPostForm.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+
+HTML = '''&lt;!doctype html>
+&lt;html>
+&lt;head>
+ &lt;meta charset="utf-8">
+ &lt;title>requestPostForm.cgi&lt;/title>
+ &lt;link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+ &lt;style>
+   form {
+     margin: 6px;
+     padding: 4px;
+     border: solid thin silver;
+     border-radius: 6px;
+     background-color: whitesmoke;
+   }
+   .result {
+     color:fuchsia;
+     padding:4px;
+     font-size;12pt;
+   }
+   .form-row {
+     margin-left:2%;
+     margin-top: 5px;
+   }
+   .message {
+     font-size; 10pt;
+     color:fuchsia;
+     margin-top, margin-bottom:10px;
+     margin-left:2%;
+    }
+ &lt;/style>
+ &lt;script>
+  function clearAll() {
+    const inputs = document.getElementsByTagName("input");
+    inputs[0].value = "";
+    inputs[1].value = "";
+    location.href = "/cgi-bin/CGI365Lib/Proj/requestPostForm.cgi";
+  }
+ &lt;/script>
+&lt;/head>
+
+&lt;body class="container">
+ &lt;section class="row">
+  &lt;h1 class="h1 text-primary text-center p-3">requestPostForm.cgi&lt;/h1>
+  &lt;p class="text-center p-3">フォームを submit POST し、結果を表示する。&lt;/p>
+  &lt;form method="POST" action="/cgi-bin/CGI365Lib/Proj/requestPostForm.cgi">
+    &lt;div class="form-row">
+      &lt;label class="form-label">A
+       &lt;input type="text" name="A" value="{{ A }}" class="form-control">
+      &lt;/label>
+    &lt;/div>
+    &lt;div class="form-row">
+      &lt;label class="form-label">B
+       &lt;input type="text" name="B" value="{{ B }}" class="form-control">
+      &lt;/label>
+    &lt;/div>
+    &lt;div class="form-row mb-4">
+      &lt;button type="submit" class="btn btn-primary">送信する&lt;/button>
+      &lt;button type="button" class="btn btn-primary" onclick="javascript:clearAll()">クリア&lt;/button>
+    &lt;/div>
+    &lt;p id="message" class="message">{{ message }}&lt;/p>
+  &lt;/form>
+ &lt;/section>
+ &lt;script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js">&lt;/script>
+&lt;/body>
+&lt;/html>'''
+
+if request.Method == "GET":
+  response.sendString(HTML, mime="text/html; charset=\"utf-8\"", cookie=False, headers=False, embed={"A":"", "B":"", "message":""})
+elif request.Method == "POST":
+  request.parseFormBody()
+  a = request.getParam("A")
+  b = request.getParam("B")
+  response.sendString(HTML, mime="text/html; charset=\"utf-8\"", cookie=False, headers=False, embed={"A":a, "B":b, "message":"POST OK"})
+else:
+  response.header("HTTP/1.1 403 Forbidden")</code></pre>
+
+     <h4 class="fs-4 text-success mt-4">マルチパートフォームの場合</h4>
+     <p>input[type="file"] コントロールを含むフォームは enctype="multipart/form-data" 属性を設定する必要がある。この場合、フォームはいくつかのパートに分けられて送信される。</p>
+     <p>次のサンプルは「サーバ側のファイル保存先ファイルのパス名」にアップロードしたファイルを保存する。ただし、存在しないフォルダを指定した場合は、デフォルトのパスに保存される。</p>
+     <form method="POST" enctype="multipart/form-data" action="/cgi-bin/CGI365Lib/Proj/postFormData2.cgi">
+       <div class="form-row">
+         <label class="form-label">サーバ側のファイル保存先ファイルのパス名
+           <input type="text" name="formText2" size="80" value="" class="form-control">
+         </label>
+       </div>
+       <div class="form-row">
+         <label class="form-label">
+           <input type="file" name="formFile2" class="form-control">
+         </label>
+       </div>
+       <div class="form-row">
+         <input type="submit" value="送信する" class="btn btn-primary mb-4">
+       </div>
+     </form>
+　　 <h5>フォームのソース</p>
+     <pre><code>&lt;form method="POST" enctype="multipart/form-data" action="/cgi-bin/CGI365Lib/Proj/postFormData2.cgi">
+  &lt;div class="form-row">
+   &lt;label class="form-label">サーバ側のファイル保存先ファイルのパス名
+     &lt;input type="text" name="formText2" size="80" value="" class="form-control">
+   &lt;/label>
+  &lt;/div>
+  &lt;div class="form-row">
+   &lt;label class="form-label">
+     &lt;input type="file" name="formFile2" class="form-control">
+   &lt;/label>
+  &lt;/div>
+  &lt;div class="form-row">
+   &lt;input type="submit" value="送信する" class="btn btn-primary mb-4">
+  &lt;/div>
+&lt;/form></code></pre>
+
+     <h5>CGI のソース</h5>
+     <pre><code>#!C:/python/python.exe
+#  postFormData2.cgi
+import CGI365Lib as CGI
+import os
+
+saveTo = "d:/temp/postFormData2.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.parseFormBody()
+  text2 = request.getParam("formText2")
+  dir = os.path.split(text2)[0]
+  if os.path.isdir(dir):
+    saveTo = text2
+  filename = request.getParam("filename-formFile2")
+  file2 = request.getParam("chunk-formFile2")
+  with open(saveTo, "wb") as f:
+    f.write(file2)
+  data  = {"formText2":text2, "filename":filename}
+  response.sendJSON(data, "utf-8")
+else:
+  response.status("403 Forbidden")</code></pre>
+   </section>
+   <hr>
+
+   <!-- JSON でのリクエスト -->
+   <section class="row">
+    <div class="col p-2">
+      <h4 class="fs-4 text-success"><a id="json_request"></a>JSON でのリクエスト</h4>
+      <p>JSON パラメータを Fetch API で CGI へ送信して、応答を表示する。応答は受け取ったデータの商品名と数量 x 単価の値である。</p>
+      <p><a href="javascript:requestJSON('GET')">requestJSON("GET")</a> | <a href="javascript:requestJSON('POST')">requestJSON("POST")</a></p>
+      <p class="message" id="fetchJSON"></p>
+　　　<br>
+     <h5>クライアント側のソース (JS365Lib.js を使用)</h5>
+     <pre><code>  // JSON でリクエスト
+function requestJSON(method) {
+  if (method == "GET") {
+    fetchJSON("/cgi-bin/CGI365Lib/Proj/fetchJSON.cgi", {"product":"みかん", "amount":12, "price":85}, "GET", (data) => {
+      setValue("fetchJSON", JSON.stringify(data));
+    });
+  }
+  else if (method == "POST") {
+    fetchJSON("/cgi-bin/CGI365Lib/Proj/fetchJSON.cgi", {"product":"りんご", "amount":10, "price":120}, "POST", (data) => {
+      setValue("fetchJSON", JSON.stringify(data));
+    });
+  }
+  else {
+    alert("メソッドが不正です。");
+  }
+}</pre></code>
+     <h5>サーバ側 (CGI) のソース</h5>
+     <pre><code>#!C:/python/python.exe
+#  fetchJSON.cgi
+import CGI365Lib as CGI
+
+#CGI.LOG = "D:/temp/fetchJSON.log"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "GET":
+  amount = int(request.getParam("amount"))
+  price = int(request.getParam("price"))
+  product = request.getParam("product")
+  payment = amount * price
+  data = {"Method":"GET", "product":product, "payment":payment}
+elif request.Method == "POST":
+  request.parseFormBody()
+  amount = int(request.getParam("amount"))
+  price = int(request.getParam("price"))
+  product = request.getParam("product")
+  payment = amount * price
+  data = {"Method":"GET", "product":product, "payment":payment}
+else:
+  data = "Bad REQUEST_METHOD"
+response.sendJSON(data, "utf-8")</code></pre>
+   </div>
+  </section>
+  <hr>
+
+  <!-- FormData でのリクエスト -->
+  <section class="row">
+    <div class="col p-2">
+      <h4 class="fs-4 text-success">FormData でのリクエスト</h4>
+      <p>FormData オブジェクトを使うと、フォームをカプセル化してリクエストを送信できる。FormData は既存のフォームをラップすることもできるし、新規に作成し append(obj) メソッドでコントロールを追加することもできる。</p>
+      <!--  フォームをラップして送信する -->
+      <h5>フォームをラップして送信する</h5>
+      <p>FormData オブジェクトの作成時にコンストラクタにフォーム自体を渡すとそのフォームをラップした FormData オブジェクトを作ることができる。次の例はそのような FormData をサーバへ送信するものである。</p>
+      <p><a href="javascript:fetchFormData1(formData1)">フォームをラップした FromData を送信する。</a></p>
+      <form name="formData1">
+        <div class="form-row">
+          <label>formText1
+            <input type="text" name="formText1" class="form-control">
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-label">formCheck1
+            <input type="checkbox" name="formCheck1" class="form-checkbox">
+          </label>
+        </div>
+      </form>
+      <p class="message" id="resultFormData1"></p>
+      <p>クライアント側ソース (JS365Lib.js を使用)</p>
+      <pre><code>// フォームをラップした FormData を送信する。
+function fetchFormData1(formElement) {
+  const formData = new FormData(formElement);
+  postFormData("/cgi-bin/CGI365Lib/Proj/postFormData.cgi", formData, (data) => {
+     let check1 = "off";
+     if (data.formCheck1) {
+       check1 = "on";
+     }
+     setValue("resultFormData2", "受け取ったデータ：" + data.formText1 + ", " + check1);
+  });
+}
+</code></pre>
+      <p>CGI ソース</p>
+      <pre><code>#!C:/python3/python.exe
+#  postFormData.cgi
+import CGI365Lib as CGI
+
+request = CGI.Request()
+response = CGI.Response()
+
+if request.Method == "POST":
+  request.parseFormBody()
+  text1 = request.getParam("formText1")
+  check1 = request.getParam("formCheck1")
+  data  = {"formText1":text1, "formCheck1":check1}
+  response.sendJSON(data, "utf-8")
+else:
+  response.sendJSON("Bad REQUEST_METHOD")</code></pre>
+      <br>
+      <!--  FormData を新規作成して送信する -->
+      <h5>FormData を新規作成して送信する</h5>
+      <p><a href="javascript:fetchFormData2()">フォームを新規作成して送信する</a></p>
+      <p class="message" id="resultFormData2"></p>
+      <p>クライアント側ソース (JS365Lib.js を使用)</p>
+      <pre><code>  // FormData を新規作成して送信する。
+function fetchFormData2() {
+  const formData = new FormData();
+  formData.append("formText1", "FormData 新規作成");
+  formData.append("formCheck1", "append(formCheck1)");
+  postFormData("/cgi-bin/CGI365Lib/Proj/postFormData.cgi", formData, (data) => {
+    setValue("resultFormData2", "受け取ったデータ：" + data.formText1 + ", " + data.formCheck1);
+  });
+}</code></pre>
+      <p>CGI ソースは前といっしょ</p>
+    </div>
+  </section>
+  <hr>
+
+  <!-- BLOB でのリクエスト -->
+  <section class="row">
+    <div class="col p-2">
+      <!--  テキストファイルのアップロード -->
+      <h4 class="fs-4 text-success"><a id="blob_request"></a>BLOB でのリクエスト</h4>
+      <h5>テキストファイルのアップロード</h5>
+      <p>BLOB とは Binary Large Object のことで、ファイル内容などのことである。Fetch API を使うと BLOB もサーバへ送信できる。
+この時、BLOB としてファイル内容を送信する場合は File API も使用する。</p>
+      <form>
+      <div class="mt-4 ms-4">
+        <label class="form-label">送信するファイルの選択 (テキストファイル)
+          <input type="file" name="uploadFile1" id="uploadFile1" class="form-control">
+        </label>
+      </div>
+      <div class="mt-4 mb-4 ms-4"><a href="javascript:uploadTextFile()">ファイルを BLOB として送信する</a></div>
+      </form>
+      <p class="message" id="resultBLOB"></p>
+      <h5>クライアント側のソース</h5>
+      <pre><code>// ファイルを BLOB としてアップロードする。
+function uploadTextFile() {
+  uploadTextFile("/cgi-bin/CGI365Lib/Proj/uploadTextFile.cgi", "uploadFile1", (msg) => {
+    setValue("resultBLOB", msg);
+  });
+}
+</code></pre>
+      <h5>CGI のソース</h5>
+      <pre><code>#!C:/python3/python.exe
+#  uploadTextFile.cgi
+import CGI365Lib as CGI
+import os
+
+SAVE = "D:/temp/uploadTextFile.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  data = request.getRawData()
+  if os.name == "nt":
+    data = data.replace(b"\r\n", b"\n")
+  with open(SAVE, "w") as f:
+    text = data.decode()
+    f.write(text)
+  response.sendSimple(SAVE + " にファイル保存しました。", "utf-8")
+else:
+  response.sendSimple("Bad REQUEST_METHOD")
+</code></pre>
+      <br>
+      <!--  バイナリーファイルのアップロード -->
+      <h5>バイナリーファイルのアップロード</h5>
+      <p>BLOB は Binary Large Object のことなので、バイナリーファイルでも構わない。</p>
+      <form>
+      <div class="mt-4 ms-4">
+        <label class="form-label">送信するファイルの選択 (バイナリーファイル)
+          <input type="file" name="uploadFile2" id="uploadFile2" class="form-control">
+        </label>
+      </div>
+      <div class="mt-4 mb-4 ms-4"><a href="javascript:uploadBinaryFile()">ファイルを BLOB として送信する</a></div>
+      </form>
+      <p class="message" id="resultBLOB2"></p>
+      <h5>クライアント側のソース</h5>
+      <pre><code>// バイナリーファイルを BLOB としてアップロードする。
+function uploadBBinaryFile() {
+  uploadTextFile("/cgi-bin/CGI365Lib/Proj/uploadBinaryFile.cgi", "uploadFile2", (msg) => {
+    setValue("resultBLOB2", msg);
+  });
+}
+</code></pre>
+      <h5>CGI のソース</h5>
+      <pre><code>#!C:/python3/python.exe
+#  uploadBinaryFile.cgi
+import CGI365Lib as CGI
+
+SAVE = "D:/temp/uploadBinaryFile.bin"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  data = request.getRawData()
+  with open(SAVE, "wb") as f:
+    f.write(data)
+  response.sendSimple(SAVE + " にファイル保存しました。", "utf-8")
+else:
+  response.sendSimple("Bad REQUEST_METHOD")</code></pre>
+    </div>
+  </section>
+  <hr>
+
+  <!-- クライアントから送られてきたデータをファイル保存 -->
+  <section class="row">
+    <div class="col p-2">
+      <h4 class="fs-4 text-success"><a id="savefile"></a>クライアントから送られてきたデータをファイル保存</h4>
+      <p>独自のコードでクライアントから送られてきたデータをファイル保存するのも難しくはないが、簡単のために次のようなファイル保存系のメソッドが用意されている。</p>
+      <ul>
+        <li>self.saveRawData(savePath): self.RawData をバイナリー保存する。(デバッグ用のデータファイル作成に便利)</li>
+        <li>self.saveAsRawString(path): クライアントからの受信データを self.RawData に保存し、それををテキストとしてファイルに保存する。</li>
+        <li>self.saveAsBLOB(path)</li>: クライアントからの受信データを self.RawData に保存し、それををバイナリとしてファイルに保存する。
+        <li>self.saveFile(name, savedir, binary=False): self.parseForBody() により解析済みの self.Form から input[type="file" name="name"] の
+アップロードファイル本体をフォルダ savedir にクライアント側のファイル名で保存する。</li>
+      </ul>
+    </div>
+    <br>
+    <h5>self.saveRawData(savePath)</h5>
+    <p>このサンプルはマルチパートフォームを POST したときの受信生データをファイル保存する例である。</p>
+    <form method="POST" enctype="multipart/form-data" action="/cgi-bin/CGI365Lib/Proj/saveRawData.cgi">
+      <div class="form-row">
+        <label class="form-label">text1
+          <input type="text" name="savePath" class="form-control" size="80">
+        </label>
+      </div>
+      <div class="form-row">file1
+        <label class="form-label">
+          <input type="file" name="file1" class="form-control">
+        </label>
+      </div>
+      <div class="form-row mb-4">
+        <button type="submit" class="btn btn-primary">送信する</button>
+      </div>
+    </form>
+    <p>クライアント側のソース</p>
+    <pre><code>    &lt;form method="POST" enctype="multipart/form-data" action="/cgi-bin/CGI365Lib/Proj/saveRawData.cgi">
+      &lt;div class="form-row">
+        &lt;label class="form-label">text1
+          &lt;input type="text" name="savePath" class="form-control" size="80">
+        &lt;/label>
+      &lt;/div>
+      &lt;div class="form-row">file1
+        &lt;label class="form-label">
+          &lt;input type="file" name="file1" class="form-control">
+        &lt;/label>
+      &lt;/div>
+      &lt;div class="form-row mb-4">
+        &lt;button type="submit" class="btn btn-primary">送信する&lt;/button>
+      &lt;/div>
+    &lt;/form></code></pre>
+    <p>CGI のソース</p>
+    <pre><code>#!C:/python3/python.exe
+#  saveRawData.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp/saveRawData.dat"
+if os.name == "nt":
+  savePath = "d:/temp/saveRawData.dat"
+
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.getRawData()
+  request.saveRawData(savePath)
+  response.sendSimple(savePath + " に保存しました。", "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+
+    <h5 class="mt-4">self.saveAsRawString(path)</h5>
+    <p><a href="javascript:saveAsRawString()">送信する</a></p>
+    <p class="message" id="resultSaveAsRawString"></p>
+    <p>クライアント側のソース</p>
+    <pre><code>// 生データをサーバへ送信して文字列としてファイル保存する。
+function saveAsRawString() {
+  const data = new Uint8Array(6);
+  data[0] = 0x41;
+  data[1] = 0x61;
+  data[2] = 0x42;
+  data[3] = 0x62;
+  data[4] = 0x43;
+  data[5] = 0x63;
+  const blob = new Blob(data);
+  uploadBLOB("/cgi-bin/CGI365Lib/Proj/saveAsRawString.cgi", blob, (text) => {
+    setValue("resultSaveAsRawString", text);
+  });
+}</code></pre>
+    <p>CGI のソース</p>
+    <pre><code>#!C:/python3/python.exe
+#  saveAsRawString.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp/saveRawString.txt"
+if os.name == "nt":
+  savePath = "d:/temp/saveAsRawString.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.saveAsRawString(savePath)
+  response.sendSimple(savePath + " に保存しました。", "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+    <br>
+
+    <h5>self.saveAsBLOB(path)</h5>
+    <p><a href="javascript:saveAsBLOB()">送信する</a></p>
+    <p class="message" id="resultSaveAsBLOB"></p>
+    <p>クライアント側のソース</p>
+    <pre><code>// 生データをサーバへ送信して文字列としてファイル保存する。
+function saveAsBLOB() {
+  const data = new Uint8Array(6);
+  data[0] = 0x41;
+  data[1] = 0x61;
+  data[2] = 0x42;
+  data[3] = 0x62;
+  data[4] = 0x43;
+  data[5] = 0x63;
+  const blob = new Blob(data);
+  uploadBLOB("/cgi-bin/CGI365Lib/Proj/saveAsBLOB.cgi", blob, (text) => {
+    setValue("resultSaveAsBLOB", text);
+  });
+}</code></pre>
+    <p>CGI のソース</p>
+    <pre><code>#!C:/python3/python.exe
+#  saveAsBLOB.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp/saveBlob.txt"
+if os.name == "nt":
+  savePath = "d:/temp/saveBlob.txt"
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.saveAsBLOB(savePath)
+  response.sendSimple(savePath + " に保存しました。", "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+    <br>
+
+    <h5>self.saveFile(name, savedir, binary=False)</h5>
+    <form name="formSaveFile" method="POST">
+     <div><label class="form-label">テキストファイル
+      <input type="file" name="saveFile" class="form-control">
+     </label></div>
+     <div class="mt-2"><a href="javascript:saveFile()">送信する</a></div>
+     <p class="message mt-2 mb-2" id="resultSaveFile"></p>
+    </form>
+    <p>クライアント側のソース</p>
+    <pre><code>// input[type="file"] でファイルをサーバへ送信してファイル保存する。
+function saveFile() {
+  postForm("/cgi-bin/CGI365Lib/Proj/saveFile.cgi", formSaveFile, (data) => {
+    setValue("resultSaveFile", JSON.stringify(data));
+  });
+}</code></pre>
+    <p>CGI のソース</p>
+    <pre><code>#!C:/python3/python.exe
+#  saveFile.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp"
+if os.name == "nt":
+  savePath = "d:/temp"
+
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.parseFormBody()
+  request.saveFile("saveFile", savePath, binary=False)
+  response.sendJSON({"message": savePath + " に保存しました。"}, "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+    <br>
+  </section>
+  <hr>
+  <section class="row">
+    <!-- クッキーの取得 -->
+    <h4 class="fs-4 text-success mt-4"><a id="cookie"></a>クッキーの取得</h4>
+    <p>クッキーは Request コンストラクタにより self.Cookie に辞書として保存される。クッキーの送信は Response クラスで HTML をクライアントへ送信したとき、HTML とともに送信される。
+response.header(headers) メソッドを使ってクッキーのみを送信することもできる。</p>
+    <p><a href="/cgi-bin/CGI365Lib/Proj/testCookie.cgi" target="_blank">クッキーを取得する。</a>　(初回はクッキーがないのでクッキーの表示はされない。そのため、2 回以上実行する。)</p>
+    <h5>testCookie.cgi のソース</h5>
+    <pre><code>#!C:/python3/python.exe
+#  testCookie.cgi
+import CGI365Lib as CGI
+import os
+
+HTML = '''&lt;!doctype html>
+&lt;html>
+ &lt;head>
+  &lt;meta charset="utf-8">
+  &lt;title>testCookie.cgi&lt;/title>
+ &lt;/head>
+
+ &lt;body>
+  &lt;h1 style="text-align:center; color: orange;">testCookie.cgi&lt;/h1>
+  &lt;hr>
+  &lt;br>
+  &lt;div id="cookies" style="color:magenta; font-size:12pt; text-align:center;">name: {{ name }}, age:{{ age }}&lt;/div>
+ &lt;/body>
+&lt;/html>'''
+
+request = CGI.Request()
+response = CGI.Response()
+name = request.getCookie("name")
+age = request.getCookie("age")
+if age != "":
+  n = int(age) + 1
+else:
+  n = 1
+response.setCookie({"name":"Boo", "age":n})
+response.sendString(HTML, "text/html; charset=utf-8", True, True, {"name":name, "age":age})
+</code></pre>
+  </section>
+ <!-- 本文の終わり -->
+ </article>
+
+ <!-- フッター -->
+ <footer class="container">
+  <p class="text-center mt-4"><a href="#top">TOP</a></p>
+  <p>&nbsp;</p>
+ </footer>
+ <!-- BootstrapのJS読み込み -->
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

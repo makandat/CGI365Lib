@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width,initial-scale=1" />
+ <title>Response</title>
+ <!-- BootstrapのCSS読み込み -->
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+ <!-- highlight.js -->
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs.min.css" rel="stylesheet">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+ <script>hljs.initHighlightingOnLoad();</script>
+ <style>
+   code {
+     border: solid thin silver;
+     border-radius: 8px;
+     padding: 5px;
+   }
+   pre {
+     font-size: 10pt;
+   }
+   form {
+     margin: 6px;
+     padding: 4px;
+     border: solid thin silver;
+     border-radius: 6px;
+     background-color: whitesmoke;
+   }
+   .result {
+     color:fuchsia;
+     padding:4px;
+     font-size;12pt;
+   }
+   .form-row {
+     margin-left:2%;
+     margin-top:8px;
+   }
+   .message {
+     padding:4px;
+     color:magenta;
+   }
+ </style>
+</head>
+
+<body>
+ <!-- ヘッダー -->
+ <header class="container">
+  <h1 class="header-1 text-primary text-center p-5">Response クラス</h1>
+  <!--  もくじ -->
+  <h5 class="h5" style="margin-left:25%;">もくじ</h5>
+  <ul style="margin-left:25%;">
+   <li><a href="#fields">Response クラスのフィールド</a></li>
+   <li><a href="#string">文字列を返す</a>
+    <ul>
+     <li><a href="#sendSimple">sendSimple</a></li>
+     <li><a href="#sendString">sendString</a></li>
+     <li><a href="#sendPPrint">sendPPrint</a></li>
+    </ul>
+   </li>
+   <li><a href="#file">ファイルを返す</a>
+    <ul>
+     <li><a href="#sendText">self.sendText(path, charset="")</a></li>
+     <li><a href="#sendHtml">self.sendHtml(path, charset="")</a></li>
+     <li><a href="#sendImage">self.sendImage(path)</a></li>
+     <li><a href="#sendVideo">self.sendVideo(path)</a></li>
+     <li><a href="#sendAudio">self.sendAudio(path)</a></li>
+     <li><a href="#sendFile">self.sendFile(path, mime, filename="")</a></li>
+    </ul>
+   </li>
+   <li><a href="#data">データを返す</a>
+    <ul>
+     <li><a href="#sendJSON">self.sendJSON(data, charset="")</a></li>
+     <li><a href="#sendBinData">self.sendBinData(data)</a></li>
+    </ul>
+   </li>
+   <li><a href="#cookie">クッキー</a>
+    <ul>
+     <li><a href="#setCookie">self.setCookie(cookies;dict)</a></li>
+     <li><a href="#makeCookie">self.makeCookie()</a></li>
+    </ul>
+   </li>
+   <li><a href="#header">ヘッダ</a>
+    <ul>
+     <li><a href="#withHTML">HTML とともに送信</a></li>
+     <li><a href="#redirect">self.redirect(url)</a></li>
+     <li><a href="#header">self.header(headers)</a></li>
+    </ul>
+   </li>
+   <li><a href="#status">ステータス</a>
+    <ul>
+     <li><a href="#status">self.status(code)</a></li>
+    </ul>
+   </li>
+  </ul>
+ </header>
+
+ <!-- 本文 -->
+ <article class="container">
+   <!-- Response クラスのフィールド -->
+   <section class="row mt-4">
+    <h2 class="fs-4 text-success"><a id="fields"></a>Response クラスのフィールド</h2>
+    <ul>
+     <li>self.Cookie:<br> HTML といっしょに送信するクッキーのリスト。self.setCookie(cookies:dict) でセットする。</li>
+     <li>self.Headers:<br> HTML といっしょに送信するヘッダーのリスト。完全なつまりそのまま送信可能なヘッダーのリスト。self.Headers.append(header:str) でセットする。</li>
+    </ul>
+   </section>
+
+   <section class="row mt-4">
+   <!-- 文字列を返す -->
+    <h2 class="fs-4 text-success"><a id="string"></a>文字列を返す</h2>
+    <h3 class="fs-4">文字列を返す際の注意事項</h3>
+    <p>クライアントへ文字列を応答として返す場合、クライアント側のデフォルトの文字コードが UTF-8 でない場合、文字化けが発生する。Windows の場合、デフォルトの文字コードは Shift_JIS なので ASCII 以外の文字列 (日本語を含む) を返す場合、文字コードを必ず指定する必要がある。</p>
+    <p>HTML の場合は、&lt;meta charset="utf-8"&gt; 行を head タグ内の最初に追加しておく。その他の場合は、パラメータに charset オプションがあるので、charset="utf-8" などのように具体的に文字コードを指定する。</p>
+    <!--  self.sendSimple(self, s:str, charset="") -->
+    <h3 class="fs-4"><a id="sendSimple"></a>self.sendSimple(self, s:str, charset="")</h3>
+    <p>文字列 s をそのまま送信する。HTTP ヘッダーは "Content-Type: text/plain" または  "Content-Type: text/plain; charset={ENC}" である。</p>
+    <p>{ENC} は charset を指定した場合の文字コードである。よって charset="" の場合、HTTP ヘッダーは前者になる。</p>
+    <h5 class="fs-5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/hello_world.cgi">実行</a></h5>
+    <pre><code>#! c:/python3/python.exe
+#  hello_world.cgi
+import CGI365Lib as CGI
+
+response = CGI.Response()
+response.sendSimple("Hello World! こんにちわ", charset="utf-8")
+</code></pre>
+    <br>
+    <!--  self.sendString(s:str, mime="", cookie=True, headers=True, embed=None) -->
+    <h3 class="fs-4 mt-3"><a id="sendString"></a>self.sendString(s:str, mime="", cookie=True, headers=True, embed=None)</h3>
+    <p>このメソッドは主に HTML を送信するときに使用する。mime = "" の場合、HTTP ヘッダーは "Content-Type: text/html" になる。文字コードを指定する場合は、mime = "text/html; charset=utf-8" などとする必要がある。</p>
+    <p>cookie が True の場合、self.Cookie が空でなければクッキーを文字列を送る前に送信する。headers = True の場合も同様に self.Headers の内容を送信する。</p>
+    <p>embed は辞書型で、送信する文字列内に "{{ key }}" というパタンがあれば、辞書の key:value ペアの value で置き換える。</p>
+    <h5 class="fs-5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendString.cgi">実行</a></h5>
+    <pre><code>#! c:/python3/python.exe
+#   sendString.cgi
+import CGI365Lib as CGI
+# http://localhost/cgi-bin/CGI365Lib/Proj/sendString.cgi
+
+HTML = '''&lt;!doctype html>
+&lt;html>
+ &lt;head>
+  &lt;meta charset="utf-8">
+  &lt;title>{{ title }}&lt;/title>
+  &lt;style>
+    h1 {
+      padding: 8px;
+      color: crimson;
+    }
+    body {
+      margin-left:10%;
+      margin-right:10%;
+    }
+  &lt;/style>
+ &lt;/head>
+
+ &lt;body>
+  &lt;h1>{{ title }}&lt;/h1>
+  &lt;p>sendString() メソッドは主に HTML をクライアント側へ返すのに使う。
+しかし、オプションを指定することで様々な文字列を送ることができる。&lt;/p>
+  &lt;p>また、selfCookie, self.Headers に有効な内容を設定しておくと、クッキー、および任意の HTTP ヘッダーを返すことができる。&lt;/p>
+ &lt;/body>
+&lt;/html>
+'''
+
+response = CGI.Response()
+response.sendString(HTML, embed={"title":"sendString() のテスト"})
+</code></pre>
+    <!--  self.sendPPrint(self, obj, charset="") -->
+    <h3 class="fs-4 mt-3"><a id="sendPPrint"></a>self.sendPPrint(self, obj, charset="")</h3>
+    <p>このメソッドはデバッグ用で、オブジェクト obj を見やすい形式にして送信する。それ以外は、sendSimple() と同じである。</p>
+    <h5 class="fs-5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendPPrint.cgi?apple=リンゴ&banana=バナナ&count=1000">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendPPrint.cgi
+import CGI365Lib as CGI
+#  http://localhost/cgi-bin/CGI365Lib/Proj/sendPPrint.cgi?apple=リンゴ&banana=バナナ&count=1000
+#    結果 {'apple': 'リンゴ', 'banana': 'バナナ', 'count': '1000'}
+request = CGI.Request()
+response = CGI.Response()
+response.sendPPrint(request.Query, charset="utf-8")
+</code></pre>
+   </section>
+
+   <section class="row mt-4">
+   <!-- ファイルを返す -->
+    <h2 class="fs-4 text-success"><a id="file"></a>ファイルを返す</h2>
+    <p>ファイルをそのまま送信するメソッドが用意されている。</p>
+    <!--  self.sendText(path, charset="") -->
+    <h3 class="fs-4 mt-3"><a id="sendText"></a>self.sendText(path, charset="")</h3>
+    <p>このメソッドはテキストファイルを読んでそのまま送信する。HTTP ヘッダは "Content-Type: text/plain" (charset="" のとき) または "Content-Type: text/plain; charset=ENC" である。(charset=ENC のとき)</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendText.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendText.cgi
+import CGI365Lib as CGI
+
+# http://localhost/cgi-bin/CGI365Lib/Proj/sendText.cgi
+PATH = "./sendText.txt"
+response = CGI.Response()
+response.sendText(PATH, charset="utf-8")
+</code></pre>
+
+    <!--  self.sendHtml(path, charset="", cookie=True, headers=True, embed=None) -->
+    <h3 class="fs-4 mt-3"><a id="sendHtml"></a>self.sendHtml(path, charset="", cookie=True, headers=True, embed=None)</h3>
+    <p>このメソッドはHTML ファイルを読んで送信する。その際、HTTP ヘッダは "Content-Type: text/html" (charset="" のとき) または "Content-Type: text/plain; charset=ENC" である。(charset=ENC のとき)</p>
+    <p>パラメータ cookie=True の場合、self.Cookie が空でなければ、その内容から SetCookie 文を作成して送信する。同様に、headers=True の場合、
+self.Headers が空でなければ、その内容をヘッダ文として送信する。</p>
+    <p>embed は辞書型で、送信する HTML 文字列内に "{{ key }}" というパタンがあれば、辞書の key:value ペアの value で置き換える。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendHtml.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendHTML.cgi
+import CGI365Lib as CGI
+
+PATH = "./sendHTML.html"
+response = CGI.Response()
+response.sendHtml(PATH, charset="utf-8")
+</code></pre>
+
+    <!--  self.sendImage(path) -->
+    <h3 class="fs-4 mt-3"><a id="sendImage"></a>self.sendImage(path)</h3>
+    <p>JPEG, PNG, GIF ファイルを送信する。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendImage.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendImage.cgi
+import CGI365Lib as CGI
+PATH = "c:/www/html/img/img_14.jpg"
+response = CGI.Response()
+response.sendImage(PATH)
+</code></pre>
+
+    <!--  self.sendVideo(path) -->
+    <h3 class="fs-4 mt-3"><a id="sendVideo"></a>self.sendVideo(path)</h3>
+    <p>MP4, OGV, WEBM ファイルを送信する。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendVideo.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendVideo.cgi
+import CGI365Lib as CGI
+PATH = "D:/HD-LLU3/Videos/COM3D2/M/Luminus Moment M4.mp4"
+response = CGI.Response()
+response.sendVideo(PATH)
+</code></pre>
+
+    <!--  self.sendAudio(path) -->
+    <h3 class="fs-4"><a id="sendAudio"></a>self.sendAudio(path)</h3>
+    <p>MP3, AAC (.m4a), OGG, WAV ファイルを送信する。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendAudio.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendAudio.cgi
+import CGI365Lib as CGI
+PATH = "E:/Music/COM3D2/scarlet leap.mp3"
+response = CGI.Response()
+response.sendAudio(PATH)
+</code></pre>
+
+    <!--  self.sendFile(path, mime, filename="") -->
+    <h3 class="fs-4 mt-3"><a id="sendFile"></a>self.sendFile(path, mime, filename="")</h3>
+    <p>ZIP ファイルなどをダウンロードするときに使用する。mime は path で指定されたファイルの MIME タイプである。次に例を示す。</p>
+    <ul>
+     <li>ZIP (.zip): application/zip</li>
+     <li>GZIP (.gz, tar.gz): application/gzip</li>
+     <li>PDF (.pdf): application/pdf</li>
+     <li>XML (.xml): text/xml</li>
+     <li>MS-Word (.doc): application/msword</li>
+     <li>MS-Excel (.xls): application/msexcel</li>
+    </ul>
+    <p>filename はクライアント側でファイル保存ダイアログに表示されるファイル名である。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/sendFile.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  saveFile.cgi
+import CGI365Lib as CGI
+import os
+
+savePath = "/hom/user/temp"
+if os.name == "nt":
+  savePath = "d:/temp"
+
+request = CGI.Request()
+response = CGI.Response()
+if request.Method == "POST":
+  request.parseFormBody()
+  request.saveFile("saveFile", savePath, binary=False)
+  response.sendJSON({"message": savePath + " に保存しました。"}, "utf-8")
+else:
+  response.status("403 Forbidden")
+</code></pre>
+
+   </section>
+
+   <section class="row mt-4">
+   <!-- データを返す -->
+    <h2 class="fs-4 text-success"><a id="data"></a>データを返す</h2>
+    <!--  self.sendJSON(data, charset="") -->
+    <h3 class="fs-4"><a id="sendJSON"></a>self.sendJSON(data, charset="")</h3>
+    <p>オブジェクト data を JSON として送信する。charset="" の場合、レスポンスヘッダは "Content-Type: application/json" で、
+charset="ENC" の場合は、"Content-Type: application/json; charset=ENC" になる。</p>
+
+    <!--  self.sendBinData(data) -->
+    <h3 class="fs-4"><a id="sendBinData"></a>self.sendBinData(data)</h3>
+    <p>data を "application/octet-stream" として送信する。</p>
+   </section>
+
+   <section class="row mt-4">
+   <!-- クッキー -->
+    <h2 class="fs-4 text-success"><a id="cookie"></a>クッキー</h2>
+    <!--  self.setCookie(cookies:dict) -->
+    <h3 class="fs-4"><a id="setCookie"></a>self.setCookie(cookies:dict)</h3>
+    <p>このメソッドは、辞書型のパラメータ cookies をクッキー送信時の形式に変換してリスト型の self.Cookie に追加する。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/setCookie.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  setCookie.cgi
+import CGI365Lib as CGI
+
+HTML = '''&lt:!doctype html>
+&lt:html>
+ &lt:head>
+   &lt:meta charset="utf-8">
+   &lt:title>setCookie.cgi&lt:/title>
+   &lt:style>
+    h1 {
+      padding:16px;
+      text-align:center;
+      color:orange;
+    }
+    .message {
+      color:fuchsia;
+      padding:8px;
+      font-size: 1em;
+    }
+   &lt:/style>
+ &lt:/head>
+
+ &lt:body style="margin-left, margin-right:10%">
+  &lt:h1>setCookie.cgi&lt:/h1>
+  &lt:p class="message">&lt:b>self.Cookie と self.Headers を同時に出力する。&lt:/b>&lt:/p>
+  &lt:p class="message">self.Headers = ["Access-Control-Allow-Methods: GET, POST", "Accept-Encoding: gzip"]&lt:br> setCookie({"cookie1":1000})&lt:/p>
+ &lt:/body>
+&lt:/html>
+'''
+
+response = CGI.Response()
+response.setCookie({"cookie1":1000})
+response.Headers.append("Access-Control-Allow-Methods: GET, POST")
+response.Headers.append("Accept-Encoding: gzip")
+
+response.sendString(HTML)
+</code></pre>
+
+    <!--  self.makeCookie() -->
+    <h3 class="fs-4 mt-3"><a id="makeCookie"></a>self.makeCookie()</h3>
+    <p>このメソッドは主に内部で使用され、self.Cookie の内容から Set-Cookie 文を作成して文字列として返す。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/makeCookie.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  makeCookie.cgi
+import CGI365Lib as CGI
+
+response = CGI.Response()
+
+response.setCookie({"cookie1":10, "cookie2":200})
+s = response.makeCookie()
+response.sendSimple(s)</code></pre>
+   </section>
+
+   <section class="row mt-4">
+   <!-- ヘッダ -->
+    <h2 class="fs-4 text-success"><a id="header"></a>ヘッダ</h2>
+    <!--  HTML とともに送信 -->
+    <h3 class="fs-4"><a id="withHTML"></a>HTML とともに送信</h3>
+    <p>HTTP ヘッダは HTML とともに送信される。その場合、送信する前に self.Headers に完全なヘッダ文を追加しておく必要がある。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/header.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  header.cgi
+import CGI365Lib as CGI
+
+HTML = '''&lt;!doctype html>
+&lt;html>
+ &lt;head>
+   &lt;meta charset="utf-8">
+   &lt;title>header.cgi&lt;/title>
+   &lt;style>
+    h1 {
+      padding:16px;
+      text-align:center;
+      color:orange;
+    }
+    .message {
+      color:fuchsia;
+      padding:8px;
+      font-size: 1em;
+    }
+   &lt;/style>
+ &lt;/head>
+
+ &lt;body style="margin-left, margin-right:10%">
+  &lt;h1>header.cgi&lt;/h1>
+  &lt;p class="message">"Access-Control-Allow-Methods: GET, POST", "Accept-Encoding: gzip"&lt;/p>
+ &lt;/body>
+&lt;/html>
+'''
+
+response = CGI.Response()
+
+response.Headers.append("Access-Control-Allow-Methods: GET, POST")
+response.Headers.append("Accept-Encoding: gzip")
+response.sendString(HTML)
+
+</code></pre>
+
+    <!--  self.redirect(url) -->
+    <h3 class="fs-4 mt-3"><a id="redirect"></a>self.redirect(url)</h3>
+    <p>"Location: URL" を出力してリダイレクトを行う。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/redirect.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  redirect.cgi
+import CGI365Lib as CGI
+
+response = CGI.Response()
+response.redirect("http://localhost")</code></pre>
+
+    <!--  self.header(headers) -->
+    <h3 class="fs-4 mt-3"><a id="header"></a>self.header(headers)</h3>
+    <p>ヘッダ文のリスト headers を送信する。</p>
+    <h5 class="h5">サンプル</h5>
+    <pre><code>#!C:/python3/python.exe
+#  sendHeader.cgi
+import CGI365Lib as CGI
+#  curl --head http://localhost/cgi-bin/CGI365Lib/Proj/sendHeader.cgi
+response = CGI.Response()
+response.header(['Age: 24', "Accept: text/*"])</code></pre>
+    <p>サンプルを実行するときは、ブラウザでは HTTP ヘッダは表示されないので curl コマンドを使う。
+--verbose オプションを使うと、HTML 本体だけでなく HTTP ヘッダも表示される。あるいは、--head オプションを使うとヘッダのみが表示される。</p>
+    <blockquote>(例)curl --verbose http://localhost/cgi-bin/CGI365Lib/Proj/header.cgi</blockquote>
+
+   <!-- ステータス -->
+    <h2 class="fs-4 text-success"><a id="status"></a>ステータス</h2>
+    <!--  self.status(code) -->
+    <h3 class="fs-4"><a id="status"></a>self.status(code, message="")</h3>
+    <p>HTTP ステータスを返す。code は "500 Internal Server Error" のようにする。message は HTML でブラウザに表示される。"" の場合は、code が message の代わりに使われる。</p>
+    <h5 class="h5">サンプル <a href="/cgi-bin/CGI365Lib/Proj/status.cgi">実行</a></h5>
+    <pre><code>#!C:/python3/python.exe
+#  status.cgi
+import CGI365Lib as CGI
+
+response = CGI.Response()
+response.status("403 Forbidden")</code></pre>
+   <p>よく使いそうなエラーコードを定義してある。これらは、Response クラスには含まれない。</p>
+   <ul style="margin-left:4%;font-size:10pt;">
+    <li>BAD_REQUEST = "400 Bad Request"</li>
+    <li>FORBIDDEN = "403 Forbidden"</li>
+    <li>METHOD_NOT_ALLOWED = "405 Method Not Allowed"</li>
+    <li>INTERNAL_SERVER_ERROR = "500 Internal Server Error"</li>
+    <li>NOT_IMPLEMENTED = "501 Not Implemented"</li>
+   </ul>
+   </section>
+ </article>
+
+ <!-- フッター -->
+ <footer class="container">
+  <p class="text-center mt-4"><a href="#top">TOP</a></p>
+  <p>&nbsp;</p>
+ </footer>
+ <!-- BootstrapのJS読み込み -->
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

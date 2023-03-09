@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.5.4  2023-03-01
+# CGI356Lib.py v1.6.0  2023-03-09
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -14,7 +14,17 @@ LOG = ""
 
 # デバッグ用 判別
 def _isDebug():
-  return len(sys.argv) > 1 and sys.argv[1] == "debug"
+  ret = False
+  if len(sys.argv) > 1 :
+    if sys.argv[1] == "debug" or sys.argv[1] == "debug_get":
+      os.environ["REQUEST_METHOD"] = "GET"
+      ret = True
+    elif sys.argv[1] == "debug_post":
+      os.environ["REQUEST_METHOD"] = "POST"
+      ret = True
+    else:
+      pass
+  return ret
 
 # デバッグ用 QUERY_STRING 設定
 def setQueryString(qs):
@@ -40,6 +50,13 @@ def info(obj):
   with open(LOG, mode="at") as f:
     f.write(strnow + " " + str(obj) + "\n")
 
+# ステータスコード
+BAD_REQUEST = "400 Bad Request"
+FORBIDDEN = "403 Forbidden"
+METHOD_NOT_ALLOWED = "405 Method Not Allowed"
+INTERNAL_SERVER_ERROR = "500 Internal Server Error"
+NOT_IMPLEMENTED = "501 Not Implemented"
+
 # --------------------------------------------------------------------
 #   Request class
 # --------------------------------------------------------------------
@@ -47,7 +64,7 @@ class Request:
   def __init__(self):
     # Windows の場合はデフォルトの文字コードが Shift JIS なので、これがないと文字化けする。
     if os.name == 'nt':
-      sys.stdin= io.TextIOWrapper(sys.stdin.buffer, encoding=ENC)
+      sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding=ENC)
     self.RawData = b""                #  POST で受け取った生データ (バイト列または文字列)
     self.QueryString = ""             #  GET で受け取った環境変数 QUERY_STRING (文字列)
     self.Method = self._getMethod()   #  HTTP メソッド 'GET', 'POST'...
@@ -55,6 +72,10 @@ class Request:
     self.Query = self._getQuery()     #  GET のパラメータ 辞書
     self.Form = dict()                #  POST のパラメータ 辞書
     self.Cookie = self._getCookie()   #  クッキー 辞書
+    if "PATH_INFO" in os.environ:
+      self.PathInfo = os.environ["PATH_INFO"]   # リクエストパス
+    else:
+      self.PathInfo = ""
     return
 
   # CGI パラメータを得る。キーが存在しないときは空文字を返す。
@@ -72,11 +93,19 @@ class Request:
           continue
       return ""
 
+  # クッキーを得る。
+  def getCookie(self, key):
+    val = ""
+    if key in self.Cookie:
+      val = self.Cookie[key]
+    return val
+
   # POST データを解析する。
   def parseFormBody(self):
     # コンソールアプリとしてデバッグするか？
     (debug, filePath) = self._getDebug()
     if debug == True:
+      # デバッグモード
       if filePath == '':
         print("Enter posted data > ", end='')
         s = input()
@@ -85,6 +114,7 @@ class Request:
         with open(filePath, "rb") as f:
           buff = f.read()
     else:
+      # ノーマルモード
       buff = sys.stdin.buffer.read()
     self.RawData = buff
     name = ""
@@ -152,7 +182,7 @@ class Request:
         items[k] = v[0]
       paramlist.append(items)
     self.Form = paramlist
-    info("self.Form = " + str(self.Form))
+    #info("self.Form = " + str(self.Form))
     return
 
   # マルチパートのブロックを行に分割する。
@@ -209,7 +239,7 @@ class Request:
     (debug, filePath) = self._getDebug()
     if debug == True:
       if filePath == '':
-        print("Enter posted data > ", end='')
+        print("Enter JSON Data > ", end='')
         s = input()
       else:
         with open(filePath, "r") as f:
@@ -217,7 +247,6 @@ class Request:
     else:
       # ノーマル動作
       s = sys.stdin.read()
-    info("s=" + s)
     self.RawData = s
     result = json.loads(s)
     return result
@@ -228,7 +257,7 @@ class Request:
     (debug, filePath) = self._getDebug()
     if debug == True:
       if filePath == '':
-        print("Enter posted data > ", end='')
+        print("Enter Raw Data > ", end='')
         s = input()
         self.RawData = s.encode()
       else:
@@ -242,58 +271,45 @@ class Request:
   # クライアントから受け取った生データを BLOB とみなし、self.RawData に格納する。
   # さらに path が "" でないならファイルのパスとみなしファイル保存する。
   def saveAsBLOB(self, path):
-    # コンソールアプリとしてデバッグするか？
-    (debug, filePath) = self._getDebug()
-    if debug == True:
-      if filePath == '':
-        print("Enter posted data > ", end='')
-        s = input()
-        self.RawData = s.encode()
-      else:
-        with open(filePath, "rb") as f:
-          self.RawData = f.read()
-    else:
-      # ノーマル動作
-      self.RawData = sys.stdin.buffer.read()
+    self.RawData = sys.stdin.buffer.read()
     with open(path, "wb") as f:
+      f.write(self.RawData)
+    return
+
+  # Request.RawData を保存する。(self.RawData が取得済みであること)
+  def saveRawData(self, savePath):
+    with open(savePath, "wb") as f:
       f.write(self.RawData)
     return
 
   # クライアントから受け取った生データを UTF-8 文字列とみなし、self.RawData に格納する。
   def getRawString(self):
-    # コンソールアプリとしてデバッグするか？
-    (debug, filePath) = self._getDebug()
-    if debug == True:
-      if filePath == '':
-        print("Enter posted data > ", end='')
-        s = input()
-        self.RawData = s
-      else:
-        with open(filePath, "r") as f:
-          self.RawData = f.read()
-    else:
-      # ノーマル動作
-      self.RawData = sys.stdin.read()
+    self.RawData = sys.stdin.read()
     return self.RawData
   
   # クライアントから受け取った生データを UTF-8 文字列とみなし、self.RawData に格納する。
   # さらに path が "" でないならファイルのパスとみなしファイル保存する。
   def saveAsRawString(self, path):
-    # コンソールアプリとしてデバッグするか？
-    (debug, filePath) = self._getDebug()
-    if debug == True:
-      if filePath == '':
-        print("Enter posted data > ", end='')
-        s = input()
-        self.RawData = s
-      else:
-        with open(filePath, "r") as f:
-          self.RawData = f.read()
-    else:
-      self.RawData = sys.stdin.read()
+    self.RawData = sys.stdin.read()
     with open(path, "w") as f:
       f.write(self.RawData)
     return
+
+  # アップロードされたファイルをファイル保存する。(request.parseFormBody()を事前に実行しておくこと)
+  def saveFile(self, name, savedir, binary=False):
+    chunk = self.getParam("chunk-" + name)
+    filename = self.getParam("filename-" + name)
+    if filename == "":
+      return False
+    path = savedir + "/" +filename
+    mode = "wt"
+    if binary:
+      mode = "wb"
+    else:
+      chunk = chunk.decode()
+    with open(path, mode) as f:
+      f.write(chunk)
+    return True
 
   # フォームデータを文字列にする。(デバッグ用)
   def formdataToString(self):
@@ -305,30 +321,42 @@ class Request:
   
   # 環境変数 QUERY_STRING から変数名をキーとする辞書を作成する。
   def _getQuery(self) -> dict:
-    if _isDebug() == False:
+    result = dict()
+    if _isDebug():
+      self.Method = os.environ["REQUEST_METHOD"]
       if self.Method != "GET":
         return
-    result = dict()
-    try:
-      self.QueryString = os.environ["QUERY_STRING"]
+      (debug, filePath) = self._getDebug()
+      if filePath == "" and os.environ["REQUEST_METHOD"] =="":
+        print("Enter QUERY_STRING >")
+        self.QueryString = input()
+      elif filePath != "":
+        with open(filePath, "rt") as f:
+          self.QueryString = f.read()
+      else:
+        self.QueryString = os.environ["QUERY_STRING"]
+      self.RawData = self.QueryString.encode()
       params = urlp.parse_qs(self.QueryString)
-      for key in params:
-        result[key] = params[key][0]
-    except Exception as e:
-      result["error"] = str(e)
+      try:
+        for key in params:
+          result[key] = params[key][0]
+      except Exception as e:
+        result["error"] = str(e)
+    else:
+      try:
+        self.QueryString = os.environ["QUERY_STRING"]
+        params = urlp.parse_qs(self.QueryString)
+        for key in params:
+          result[key] = params[key][0]
+      except Exception as e:
+        result["error"] = str(e)
     return result
 
   # 環境変数 REQUEST_METHOD から HTTP メソッド名を返す。
   def _getMethod(self) -> str:
-    method = "GET"
-    try:
-      if _isDebug() == False:
-        method = os.environ["REQUEST_METHOD"]
-      else:
-        if self.Method != "":
-          method = self.Method
-    except:
-      method = ""
+    method = ""
+    if "REQUEST_METHOD" in os.environ:
+      method = os.environ["REQUEST_METHOD"]
     return method
 
   # 環境変数 HTTP_COOKIE からクッキー名をキーとする辞書を返す。
@@ -356,12 +384,6 @@ class Request:
     except:
       pass
     return address
-
-  # Request.RawData を保存する。(self.RawData が取得済みであること)
-  def saveRawData(self, savePath):
-    with open(savePath, "wb") as f:
-      f.write(self.RawData)
-    return
   
   # filename と chunk を得る。
   def _getChunk(self, name):
@@ -384,28 +406,33 @@ class Request:
         return (filename, chunk)
     else:
         return (b"", b"")
-  
-  # request.RawData の中の指定した name の生データ (octed-stream) を saveDir/filename でファイル保存する。
-  def saveChunk(self, name, saveDir):
-    (filename, chunk) = self._getChunk(name)
-    if filename == "":
-      return False
-    path = saveDir + "/" + filename
-    with open(path, "wb") as f:
-      f.write(chunk)
-    return True
 
   # デバッグ用のファイルを得る。
   def _getDebug(self):
+    dbg = False
+    filePath = ""
     if len(sys.argv) > 1:
-      if sys.argv[1] == 'debug':
-        return (True, '')
-      elif os.path.exists(sys.argv[1]):
-        return (True, sys.argv[1])
+      if sys.argv[1] == "debug":
+        self.Method = "GET"
+        dbg = True
       else:
-        return (False, '')
-    else:
-      return (False, '')
+        if sys.argv[1] == "debug_get":
+          self.Method = "GET"
+          dbg =True
+          if len(sys.argv) > 2 and os.path.exists(sys.argv[2]):
+            filePath =sys.argv[2]
+          else:
+            pass
+        elif sys.argv[1] == "debug_post":
+          self.Method = "POST"
+          dbg = True
+          if len(sys.argv) > 2 and os.path.exists(sys.argv[2]):
+            filePath = sys.argv[2]
+          else:
+            pass
+        else:
+          pass
+    return (dbg, filePath)
 
 # --------------------------------------------------------------------
 # Response class
@@ -462,6 +489,7 @@ class Response:
 
   # pprint でオブジェクトを文字列にして返す。(for Debug)
   def sendPPrint(self, obj, charset=""):
+    info(obj)
     if charset == "":
       print("Content-Type: text/plain\n")
     else:
@@ -496,10 +524,13 @@ class Response:
     return
 
   # HTMLファイルを応答として返す。path はそのパス名。
-  def sendHtml(self, path, charset="", cookie=True, embed=None):
+  def sendHtml(self, path, charset="", cookie=True, headers=True, embed=None):
     buff = ""
     if cookie:
       buff = self.makeCookie()
+    if headers and len(self.Headers) > 0:
+      for h in self.Headers:
+        buff += h + "\n"
     if charset == "":
       buff += f"Content-Type: text/html\n\n"
     else:
@@ -508,7 +539,7 @@ class Response:
       buff += f.read()
       if isinstance(embed, dict):
         for k, v in embed.items():
-          buff = buff.replace("{{" + k + "}}", v)
+          buff = buff.replace("{{" + k + "}}", v).replace("{{ " + k + " }}", v)
       print(buff)
     return
 
@@ -545,11 +576,11 @@ class Response:
   def sendVideo(self, path):
     p = pathlib.Path(path)
     if p.suffix == '.mp4':
-      video = "mp4"
+      video = b"mp4"
     elif p.suffix == '.webm':
-      video = "webm"
+      video = b"webm"
     else:
-      video = "ogv"
+      video = b"ogv"
     with open(path, mode="rb") as f:
       b = f.read()
       buff = b"Content-Type: video/" + video + b"\n\n" + b
@@ -563,13 +594,13 @@ class Response:
   def sendAudio(self, path):
     p = pathlib.Path(path)
     if p.suffix == '.mp3':
-      audio = "mp3"
+      audio = b"mp3"
     elif p.suffix == '.m4a':
-      audio = "aac"
+      audio = b"aac"
     elif p.suffix == '.wav':
-      audio = "wav"
+      audio = b"wav"
     else:
-      video = "ogg"
+      audio = b"ogg"
     with open(path, mode="rb") as f:
       b = f.read()
       buff = b"Content-Type: audio/" + audio + b"\n\n" + b
@@ -581,13 +612,12 @@ class Response:
 
   # その他の形式のファイルを応答として返す。mime は ZIP="application/zip", PDF="application/pdf" など
   def sendFile(self, path, mime, filename=""):
-    bmm = bytes(mime, 'utf-8')
-    buff = ""
+    buff = b""
     with open(path, mode="rb") as f:
       b = f.read()
       if filename != "":
-        buff += f"Content-Disposition: attachment; filename={filename}\n"
-      buff += b"Content-Type: " + bmm + b"\n\n" + b
+        buff += b"Content-Disposition: attachment; filename=" + filename.encode() + b"\n"
+      buff += b"Content-Type: " + mime.encode() + b"\n\n" + b
       if _isDebug():
         pprint(buff)
       else:
@@ -598,19 +628,26 @@ class Response:
   def redirect(self, url):
     print("Location: " + url + "\n")
     
-  # HTTP ヘッダを出力 (headers は辞書で最後の項目は Content-Type であるものとする)
+  # HTTP ヘッダを出力 (headersはリスト)
   def header(self, headers):
     s = ""
-    for k, v in headers.items():
-      s += k
-      s += ": "
-      s += v
-      s += "\n"
+    for h in headers:
+      s += h + "\n"
     s += "\n"
     print(s)
     return
 
+  # HTTP レスポンス・ステータスコードを返す。code は "500 Internal Server Error" のようにする。
+  def status(self, code, message=""):
+    if message == "":
+      print("Status: " + code + "\n" + "Content-Type: text/html; charset=utf-8\n\n" + code)
+    else:
+      print("Status: " + code + "\n" + "Content-Type: text/html; charset=utf-8\n\n" + message)
+    return
+
+# ---------------------------------------------------------------------------
 #  ユーティリティ
+# ---------------------------------------------------------------------------
 class Utility:
   # HTML テーブルを作成する。
   @staticmethod

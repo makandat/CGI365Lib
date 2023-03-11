@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.6.0  2023-03-09
+# CGI356Lib.py v1.6.1  2023-03-10
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -327,7 +327,7 @@ class Request:
       if self.Method != "GET":
         return
       (debug, filePath) = self._getDebug()
-      if filePath == "" and os.environ["REQUEST_METHOD"] =="":
+      if filePath == "" and os.environ["REQUEST_METHOD"] =="" or ("QUERY_STRING" in os.environ) == False:
         print("Enter QUERY_STRING >")
         self.QueryString = input()
       elif filePath != "":
@@ -539,7 +539,7 @@ class Response:
       buff += f.read()
       if isinstance(embed, dict):
         for k, v in embed.items():
-          buff = buff.replace("{{" + k + "}}", v).replace("{{ " + k + " }}", v)
+          buff = buff.replace("{{" + k + "}}", str(v)).replace("{{ " + k + " }}", str(v))
       print(buff)
     return
 

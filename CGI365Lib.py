@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.6.1  2023-03-10
+# CGI356Lib.py v1.6.2  2023-03-21
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -327,7 +327,7 @@ class Request:
       if self.Method != "GET":
         return
       (debug, filePath) = self._getDebug()
-      if filePath == "" and os.environ["REQUEST_METHOD"] =="" or ("QUERY_STRING" in os.environ) == False:
+      if filePath == "" and os.environ["REQUEST_METHOD"] =="":
         print("Enter QUERY_STRING >")
         self.QueryString = input()
       elif filePath != "":
@@ -465,7 +465,7 @@ class Response:
   def sendString(self, s:str, mime="", cookie=True, headers=True, embed=None):
     if isinstance(embed, dict):
       for k, v in embed.items():
-         s = s.replace("{{ " + k + " }}", v)
+         s = s.replace("{{ " + k + " }}", str(v))
     buff = ""
     if cookie:
       buff = self.makeCookie()
@@ -720,3 +720,11 @@ class Utility:
     proc = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE, text=True)
     result = proc.stdout
     return result
+
+  # JSON ファイル (構成ファイル) を読む。
+  @staticmethod
+  def readConf(filePath):
+    conf = dict()
+    with open(filePath, "r") as f:
+      conf = json.load(f)
+    return conf

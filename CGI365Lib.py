@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.6.2  2023-03-21
+# CGI356Lib.py v1.6.4  2023-03-22
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -56,6 +56,28 @@ FORBIDDEN = "403 Forbidden"
 METHOD_NOT_ALLOWED = "405 Method Not Allowed"
 INTERNAL_SERVER_ERROR = "500 Internal Server Error"
 NOT_IMPLEMENTED = "501 Not Implemented"
+
+# タグで囲む。
+def tag(t, s, c=""):
+  tg = f"<{t}"
+  if c == "":
+    tg += ">"
+  else:
+    tg += f" class=\"{c}\">"
+  tg += f"{s}</{t}>\n"
+  return tg
+
+# a タグで囲む
+def anchor(url, s, target=""):
+  an = f"<a href=\"{url}\""
+  if target == "":
+    an += ">"
+  else:
+    an += f" target=\"{target}\">"
+  an += f"{s}</a>"
+  return an
+
+
 
 # --------------------------------------------------------------------
 #   Request class
@@ -327,14 +349,14 @@ class Request:
       if self.Method != "GET":
         return
       (debug, filePath) = self._getDebug()
-      if filePath == "" and os.environ["REQUEST_METHOD"] =="":
+      if filePath == "":
         print("Enter QUERY_STRING >")
         self.QueryString = input()
       elif filePath != "":
         with open(filePath, "rt") as f:
           self.QueryString = f.read()
       else:
-        self.QueryString = os.environ["QUERY_STRING"]
+        self.QueryString = os.environ["QUERY_STRING"] if "QUERY_STRING" in os.environ else ""
       self.RawData = self.QueryString.encode()
       params = urlp.parse_qs(self.QueryString)
       try:
@@ -344,7 +366,7 @@ class Request:
         result["error"] = str(e)
     else:
       try:
-        self.QueryString = os.environ["QUERY_STRING"]
+        self.QueryString = os.environ["QUERY_STRING"] if "QUERY_STRING" in os.environ else ""
         params = urlp.parse_qs(self.QueryString)
         for key in params:
           result[key] = params[key][0]

@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.6.4  2023-03-22
+# CGI356Lib.py v1.6.5  2023-03-22
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -83,7 +83,7 @@ def anchor(url, s, target=""):
 #   Request class
 # --------------------------------------------------------------------
 class Request:
-  def __init__(self):
+  def __init__(self, postparse=False):
     # Windows の場合はデフォルトの文字コードが Shift JIS なので、これがないと文字化けする。
     if os.name == 'nt':
       sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding=ENC)
@@ -98,6 +98,8 @@ class Request:
       self.PathInfo = os.environ["PATH_INFO"]   # リクエストパス
     else:
       self.PathInfo = ""
+    if self.Method == "POST" and postparse == True:
+      self.parseFormBody()
     return
 
   # CGI パラメータを得る。キーが存在しないときは空文字を返す。

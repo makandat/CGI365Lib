@@ -1,4 +1,4 @@
-# CGI356Lib.py v1.6.5  2023-03-22
+# CGI356Lib.py v1.6.6  2023-03-29
 import os, sys, datetime, io
 import subprocess
 from subprocess import PIPE
@@ -94,8 +94,8 @@ class Request:
     self.Query = self._getQuery()     #  GET のパラメータ 辞書
     self.Form = dict()                #  POST のパラメータ 辞書
     self.Cookie = self._getCookie()   #  クッキー 辞書
-    if "PATH_INFO" in os.environ:
-      self.PathInfo = os.environ["PATH_INFO"]   # リクエストパス
+    if "REQUEST_URI" in os.environ:
+      self.PathInfo = os.environ["REQUEST_URI"]   # リクエストパス
     else:
       self.PathInfo = ""
     if self.Method == "POST" and postparse == True:
